@@ -88,11 +88,13 @@ FORBIDDEN: 不得读 copy-workflow/references/ 下除本段以外的文件
 
 ⚠️ 不问用户，不暂停；用户想换行为就用参数。
 
-### 第 2 步：从 country 自动推断市场/语言（不问用户 —— v2）
+### 第 2 步：按飞书"国家"字段自动本地化（完全自动，无需指定语言）
 
-从 output/_handoff.json 读 `country`（research 段已写），按下表自动推断：
+**来源**：用户在飞书 Base 的产品行已填"国家"字段 → research 段 Step 1.4 把它写入 `output/_handoff.json.country` → 本步直接读取并按下表自动推断 `target_market` / `target_language` / `localization_mode`。
 
-| country | target_market | target_language | localization_mode |
+**不询问、不暂停、不需要用户敲语言名。** 飞书里填什么国家，这里就出对应市场的本地化稿。
+
+| `country` | target_market | target_language | localization_mode |
 |---|---|---|---|
 | **US** | US | en-US | regional |
 | **UK** 或 **GB** | UK | en-UK | regional |
@@ -111,17 +113,20 @@ FORBIDDEN: 不得读 copy-workflow/references/ 下除本段以外的文件
 | KR | KR | Korean | translation |
 | BR | BR | Brazilian Portuguese | translation |
 | PT | PT | Portuguese (Portugal) | translation |
-| 未匹配 | — | — | **回退到原询问模式**（A-J 让用户选） |
+| 未匹配 | — | — | 提醒用户补齐飞书"国家"字段后重跑，不进询问 |
 
-**Override 参数**：
+<details>
+<summary><b>进阶 override 参数</b>（通常不用 — 想临时忽略飞书国家字段时才加）</summary>
 
 | 参数 | 行为 |
 |---|---|
-| 无参数（默认） | 按 country 自动推断 |
-| `--lang=<语言>` 如 `--lang=French` | 强制指定 target_language（忽略 country） |
-| `--market=<国家>` 如 `--market=DE` | 强制指定 target_market（重新走表自动推断） |
-| `--mode=regional\|translation` | 强制指定本地化模式 |
-| `--ask` | 回退到询问模式 |
+| 无参数 | **默认**，按飞书 country 自动推断 |
+| `--lang=<语言>` 如 `--lang=French` | 临时强制指定 target_language（忽略 country） |
+| `--market=<国家>` 如 `--market=DE` | 临时强制指定 target_market（重新走表） |
+| `--mode=regional\|translation` | 临时强制指定本地化模式 |
+| `--ask` | 回退到"让用户选 A-J"的询问模式 |
+
+</details>
 
 **处理（确定参数后）**：
 
