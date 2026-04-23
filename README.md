@@ -1,139 +1,94 @@
-# copy-workflow — 文案自动化工作流（分段编排版）
+# copy-workflow — 跨境电商文案自动化工作流
 
-端到端跨境电商落地页文案流水线：飞书查竞品 → Gemini 调研 → 3 轮 Writer-Reviewer → 竞品对比 → 定向优化 → 翻译质检。
+端到端流水线：**飞书查产品 / 竞品 → Playwright + Gemini Pro Deep Research 调研 → 3 轮 Writer-Reviewer 对抗 → 竞品对标 3 轮达标即停循环 → 按国家自动本地化 → 飞书 docx 推送 + 多维表回填 → 本地自动清理**。
 
-## 🆕 三段式入口（推荐使用）
-
-用 `/copy-workflow <段名>` 拆段跑，**主 agent 零上下文污染、低 token**：
+## Quick Start
 
 ```
-/copy-workflow research [产品名]   — 调研段（Stage 1-2）
-/copy-workflow write               — 生成+优化（Stage 3，3 轮 Writer-Reviewer）
-/copy-workflow finalize            — 对比+翻译终稿（Stage 4-6）
-/copy-workflow all [产品名]        — 全流程串联（段间暂停确认）
-/copy-workflow                     — 展示四选一菜单
+/copy-workflow all <产品>-<国家>
 ```
 
-**架构**：`SKILL.md` 只做路由，`references/<段>.md` 写编排骨架，每段派独立子 Agent 执行，子 Agent 看不到主会话历史。详见本目录的 `SKILL.md` 和 `references/`。
+举例：`/copy-workflow all Teeth20-US`
 
-## 旧入口（兼容保留）
+其中 `<产品>` 对应飞书 Base「电商项目组_产品总表」的"产品(英)"字段，`<国家>` 对应"国家"字段。飞书里填什么国家，就出对应市场的本地化稿（US → 美式英语地区化；DE → 德语翻译；FR → 法语翻译 ...），**全程无需手动指定语言或手动粘贴文案**。
 
-`/run-all-guided` 仍可用，等价于旧版的一次性全流程（单 agent 串联），但已被 `/copy-workflow all` 替代。建议迁移到新入口。
+## 四种入口
 
-## 分层结构
+| 命令 | 阶段 | 说明 |
+|---|---|---|
+| `/copy-workflow research <产品>-<国家>` | Stage 1-4 | 飞书 lark-cli 查竞品 → Playwright 抓页面 → Gemini Pro Deep Research → `input/research-report.md` |
+| `/copy-workflow write` | Stage 3 + Step 7.5 | Writer-Reviewer 3 轮对抗 → `optimized.md` → 竞品对标 3 轮改稿循环（达标 diff ≥ +8 即停） |
+| `/copy-workflow finalize [--override]` | Stage 4-6 | 按对比建议优化 → 按 country 自动本地化 → 飞书 docx 推送 + Base 回填 → 本地自动清理 |
+| `/copy-workflow all <产品>-<国家>` | 三段串联 | research → write → finalize（段间暂停确认） |
 
-**编排层（新）**
+## 架构
 
-| 文件 | 作用 |
-|------|------|
-| `SKILL.md` | 主编排入口，参数路由 + 派子 Agent + 展示摘要 |
-| `references/research.md` | 调研段编排（调 step1-extract + step2-gemini） |
-| `references/write.md` | 生成+优化段编排（调 landing-page 3 轮对抗） |
-| `references/finalize.md` | 对比+翻译终稿段编排（调 copy-compare + copy-optimize + translate） |
-| `references/all.md` | 三段串联 + 段间暂停 |
-
-**执行层（原有 6 个子 skill，不动）**
-
-| 目录 | 命令 | 作用 |
-|------|------|------|
-| `step1-extract/` | `/step1-extract` | 飞书多维表查竞品 → 抓取页面 → 提炼结构化卖点 |
-| `step2-gemini/` | `/step2-gemini` | 生成 Gemini Deep Research 提示词 |
-| `landing-page/` | `/landing-page` | Writer-Reviewer 3 轮对抗生成 11 Section 英文文案 |
-| `copy-compare/` | `/copy-compare` | 我方 vs 竞品 5 维度 100 分制对比 |
-| `copy-optimize/` | `/copy-optimize` | 基于对比报告的单轮定向优化 |
-| `translate/` | `/translate` | 目标语言翻译 + CHECKLIST 质检 |
-| `run-all-guided/` | `/run-all-guided` | 旧的全流程入口（兼容保留，建议用 `/copy-workflow all` 代替） |
-
-## 快速开始
-
-推荐：直接跑主流水线
+**编排层**（`SKILL.md` + `references/`）只做路由 + 派子 Agent + 展示摘要，零业务逻辑。
+**执行层**（6 个子 skill）负责具体业务，各自保持独立可用。
 
 ```
-/run-all-guided
+用户  →  主 agent（只路由）  →  独立子 Agent（跑业务，回传 < 500 token 摘要）
+                                       ↓
+                          output/_handoff.json（段间交接）
 ```
 
-Claude 会问你产品名、展示 Gemini 提示词、等你粘贴调研报告、自动做 3 轮文案、等你粘贴竞品、打分、问是否优化、问目标语言、翻译、质检。全程 7 个 Stage。
+详见 [`SKILL.md`](SKILL.md) 和 [`references/{research,write,finalize,all}.md`](references/)。
 
-## 单模块独立使用
-
-```bash
-/step1-extract                                         # 只跑 step1
-/step2-gemini                                          # step1 已完成后跑
-/landing-page                                          # 有 input/research-report.md 后跑
-/copy-compare                                          # 有文案 + 竞品后跑
-/copy-optimize output/optimized.md output/compare-result.md v2   # 对比后想优化
-/translate French                                      # final.md 翻法语
-```
-
-## 文件夹结构
+## 目录结构
 
 ```
 copy-workflow/
-├── README.md                      本文件
-├── step1-extract/
-│   └── SKILL.md
-├── step2-gemini/
-│   └── SKILL.md
-├── landing-page/
-│   ├── SKILL.md                   3 轮 Writer-Reviewer 编排
-│   ├── WRITER.md                  文案创作指令（11 Section + Effect Data + Before/After）
-│   └── REVIEWER.md                审核指令（字数 + 6 维度打分 + 反模板）
-├── copy-compare/
-│   └── SKILL.md
-├── copy-optimize/
-│   └── SKILL.md                   单轮定向优化器（新增）
-├── translate/
-│   ├── SKILL.md                   翻译流程
-│   └── CHECKLIST.md               7 大类翻译质检项
-├── run-all-guided/
-│   └── SKILL.md                   主流水线编排
-├── input/
-│   ├── product-info-template.txt  空模板（Stage 7 会用它重置）
-│   ├── product-info.txt           Stage 1 抓取的原始产品信息
-│   ├── research-report.md         用户手动粘贴的 Gemini 报告
-│   └── competitor-copy.md         用户手动粘贴的竞品文案
-└── output/
-    ├── step1-extract.md           卖点提炼结果
-    ├── step2-gemini-prompt.md     Gemini 提示词（可直接复制）
-    ├── draft-r1.md                Writer Round 1 初稿
-    ├── draft-r2.md                Writer Round 2 修改稿
-    ├── draft-r3.md                Writer Round 3 终稿
-    ├── optimized.md               landing-page 终审通过稿
-    ├── compare-result.md          竞品对比报告
-    ├── final.md                   底稿（optimize 或原样）
-    ├── translated.md              翻译稿
-    └── final-translated.md        质检后终稿
-```
-
-## 模块调用关系
-
-```
-/run-all-guided
+├── SKILL.md                  主编排入口（参数路由 + 派发）
+├── README.md                 本文件
+├── .gitignore                排除业务产物（finalize Step 5 自动清理）
 │
-├─ Stage 1  → step1-extract/       产品提炼
-├─ Stage 2  → step2-gemini/        生成提示词
-│             ⏸ 等用户粘贴 research-report.md
-├─ Stage 3  → landing-page/        3 轮 Writer-Reviewer
-│             ⏸ 等用户粘贴 competitor-copy.md
-├─ Stage 4  → copy-compare/        对比打分
-│             ⏸ 询问是否优化
-├─ Stage 5  → copy-optimize/       可选：定向优化
-│             ⏸ 询问目标语言
-├─ Stage 6  → translate/           翻译 + CHECKLIST 质检
-└─ Stage 7  → 重置 input/product-info.txt 为模板
+├── references/               ← 编排层（主 agent 才读）
+│   ├── research.md             调研段编排（Stage 1-4，含浏览器自动化）
+│   ├── write.md                生成+优化段编排（3 轮 Writer-Reviewer + Step 7.5 对标循环）
+│   ├── finalize.md             终稿段编排（优化 + 本地化 + 飞书推送 + Step 5 自动清理）
+│   └── all.md                  三段串联
+│
+├── step1-extract/            ← 执行层：飞书查 + 竞品抓取 + 卖点提炼
+├── step2-gemini/             ← 执行层：Deep Research 提示词生成
+├── landing-page/             ← 执行层：11 Section 英文文案（WRITER + REVIEWER）
+├── copy-compare/             ← 执行层：5 维度 100 分制竞品对标
+├── copy-optimize/            ← 执行层：基于对比报告的单轮定向优化
+├── translate/                ← 执行层：按目标语言翻译 + CHECKLIST 质检
+│
+├── input/                    ← 业务输入（只保留 *-template.* 模板）
+│   ├── competitor-copy-template.md
+│   ├── product-info-template.txt
+│   └── research-report-template.md
+│
+└── output/                   ← 业务输出（finalize Step 5 自动清理）
+    ├── research/               research 段产物副本
+    ├── write/                  write 段产物副本
+    ├── finalize/               finalize 段产物副本
+    └── _handoff.json           段间交接状态（清理后删）
 ```
 
-## 设计原则
+## 单 skill 独立使用
 
-1. **模块单一职责**：每个 SKILL.md 只管自己的阶段，不越权调用其他模块逻辑
-2. **编排与执行分离**：`/run-all-guided` 只做编排，Stage 内部的指令从对应模块的 SKILL.md 读取
-3. **只改框架不改业务**：Section 数量/顺序/功能定位在任何阶段都不可动（见 WRITER.md / copy-compare / copy-optimize 的硬性约束）
-4. **关键人工节点保留**：step1 飞书、step2 Gemini、竞品粘贴、目标语言、质检修改 — 这 5 个决策点都停下等用户
-
-## 迁移备份
-
-重构前的扁平版保存在同级目录 `copy-workflow.bak/`，如需回滚：
-
-```bash
-rm -rf copy-workflow && mv copy-workflow.bak copy-workflow
 ```
+/step1-extract                     只跑卖点提炼
+/step2-gemini                      生成 Gemini 提示词
+/landing-page                      仅跑 Writer-Reviewer 3 轮（需 input/research-report.md）
+/copy-compare                      仅跑一次对比打分
+/copy-optimize <copy> <report>     按指定对比报告定向改稿
+/translate <语言>                  仅跑翻译 + 质检（读 output/final.md）
+```
+
+## 前置条件
+
+1. **lark-cli** 已配置并认证（`lark-cli config init` + `lark-cli auth login`），具备 `base` / `drive` / `docs` 读写权限
+2. **Chrome 浏览器** + **Playwright MCP** 已就位（research 段 Stage 3 用来跑 gemini.google.com Deep Research）
+3. **Gemini 账号** 已登录 `gemini.google.com` 且具备 **Pro / Ultra 订阅**（Deep Research 功能）
+4. **飞书 Base**「电商项目组_产品总表」产品行已填 `产品(英)` / `国家` / `竞品链接` / `品牌` 字段
+
+## 关键设计原则
+
+1. **主上下文零污染**：每段派独立子 Agent，回传只接受 < 500 token 摘要
+2. **段间文件交接**：靠 `output/_handoff.json` 和产物文件，不靠会话记忆
+3. **references 互不引用**：write 不读 research，finalize 不读 write
+4. **调研报告只消费一次**：Writer R1 读 `input/research-report.md`，R2/R3 和所有 Reviewer 不读（防污染）
+5. **落地后自动清理**：finalize Step 5 按 `feishu_publish == "ok"` 自动清 `input/` + `output/`，下次跑新产品从零起点

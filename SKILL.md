@@ -106,26 +106,24 @@ FORBIDDEN: <由 references 指定>
 
 ## 与现有子 skill 的关系
 
-- **不动**：`step1-extract/`、`step2-gemini/`、`landing-page/`、`copy-compare/`、`copy-optimize/`、`translate/` 各自保持独立可用（`/step1-extract` 等子 slash command 仍可直接调用）。
-- **替代**：`run-all-guided/` 的角色由 `references/all.md` 替代，但暂时保留 `run-all-guided/` 作为兼容入口。
+`step1-extract/`、`step2-gemini/`、`landing-page/`、`copy-compare/`、`copy-optimize/`、`translate/` 各自保持独立可用（`/step1-extract` 等子 slash command 仍可直接调用）；本 SKILL 只负责跨段编排。
 
 ## 文件结构速览
 
 ```
 copy-workflow/
 ├── SKILL.md                 ← 本文件（主编排）
+├── README.md
 ├── references/
-│   ├── research.md          ← 调研段（Stage 1-2）
-│   ├── write.md             ← 生成+优化段（Stage 3）
-│   ├── finalize.md          ← 对比+翻译终稿段（Stage 4-6）
+│   ├── research.md          ← 调研段（Stage 1-4，含浏览器自动化）
+│   ├── write.md             ← 生成+优化段（3 轮 Writer-Reviewer + Step 7.5 对标循环）
+│   ├── finalize.md          ← 终稿段（优化 + 本地化 + 飞书推送 + Step 5 自动清理）
 │   └── all.md               ← 三段串联
-├── step1-extract/ 等 6 个子 skill    ← 不动
-├── input/                   ← 不动
-├── output/
-│   ├── research/            ← 本段产物副本
-│   ├── write/               ← 本段产物副本
-│   ├── finalize/            ← 本段产物副本
-│   ├── _handoff.json        ← 段间交接清单（每段结束写入）
-│   └── （子 skill 原始产物路径也在 output/ 下，由子 skill 自写）
-└── run-all-guided/          ← 兼容保留
+├── step1-extract/ 等 6 个子 skill    ← 执行层
+├── input/                   ← 只保留 *-template.* 模板
+└── output/
+    ├── research/            ← 本段产物副本
+    ├── write/               ← 本段产物副本
+    ├── finalize/            ← 本段产物副本
+    └── _handoff.json        ← 段间交接清单（finalize Step 5 清理后删）
 ```

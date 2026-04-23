@@ -134,4 +134,4 @@ argument-hint: "<current-copy-file> <compare-report-file> [version-tag]"
 - `/copy-compare` 后，如想继续优化 → 直接用 `/copy-optimize`
 - 对特定文案做有针对性的迭代，而不想重跑整个流水线
 
-也可以被 `/run-all-guided` 在 compare 阶段的暂停点后调用（当用户选择"根据对比结果优化"）。
+也被 `/copy-workflow write` 的 Step 7.5（竞品对标循环）在每轮不达标时调用作为改稿器，以及 `/copy-workflow finalize` 的第 1 步默认优化路径调用。

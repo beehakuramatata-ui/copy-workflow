@@ -33,3 +33,5 @@ output/v2-*/
 Thumbs.db
 *.log
 *.swp
+*.bak
+copy-workflow.bak/

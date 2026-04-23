@@ -9,7 +9,7 @@ argument-hint: "[产品名]（可选，若未提供会主动询问）"
 
 ## 触发入口
 
-当用户说"调用我的文案工作流"、运行 `/run-all-guided` 或等价指令时：
+当用户说"调用我的文案工作流"、运行 `/copy-workflow research <产品>-<国家>` / `/copy-workflow all <产品>-<国家>` 或等价指令时：
 - **不要**直接读取 `input/product-info.txt`
 - **不要**凭旧数据开始提炼
 
