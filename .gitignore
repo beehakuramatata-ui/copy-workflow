@@ -1,0 +1,35 @@
+# Business data produced during a run — cleaned by finalize Step 5
+# Keep directory structure via .gitkeep
+
+# input/ 只保留 *-template.* 和 .gitkeep
+input/competitor-copy.md
+input/product-info.txt
+input/research-report.md
+
+# output/ 根下所有业务产物
+output/*.md
+output/*.html
+output/*.js
+output/*.yaml
+output/*.json
+
+# output/ 三个副本子目录里所有内容（保留目录本身）
+output/finalize/*
+output/research/*
+output/write/*
+!output/finalize/.gitkeep
+!output/research/.gitkeep
+!output/write/.gitkeep
+
+# 历史 run 残留（如 v1-soberra-xxx/）
+output/v1-*/
+output/v2-*/
+
+# Playwright 临时 snapshot
+.playwright-mcp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+*.swp
