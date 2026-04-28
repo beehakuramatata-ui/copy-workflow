@@ -1,156 +1,123 @@
-# references/finalize.md — 对比+翻译终稿段（Stage 4-6）
+# references/finalize.md — 质检+发布段（v5.2）
 
-> 主 agent 按本文件派一个独立子 Agent 跑完本段。主 agent 绝不直接读 copy-compare / copy-optimize / translate 的 SKILL.md 或 CHECKLIST.md。
+> 主 agent 按本文件派一个独立子 Agent 跑完本段。主 agent 绝不直接读 translate / copy-optimize 的 SKILL.md 或 CHECKLIST.md。
+>
+> **v5.2 变更（2026-04-28）**：
+> - **Step 5 清理前置改读独立文件 `_handoff_feishu_research.json`**（research 段子 Agent C 写入），不再依赖 _handoff.json 里的 feishu_research_* 字段（v5.1 那个字段被本段 _handoff.json 覆盖丢失，导致 Step 5 永远跳过清理）
+> - **清理动作**把 `_handoff_feishu_research.json` 也一并删除
+>
+> **v5 变更（2026-04-27）**：
+> - 背景变化：v5 起 Writer 已直接产出目标语言文案（FR 产品 → 法语 optimized.md），所以本段读到的 `optimized.md` 已是目标语言，cp 后的 final.md 和质检后的 qc-checked.md 也是目标语言，飞书回填的"文案"docx 自然就是目标语言
+> - 第 2 步质检的隐含语义增强：A-H 维度在目标语言稿上跑更有意义（C 段查目标市场监管/货币是否本地化；H 段查目标语言人名是否本土化）
+>
+> **v4 既有要点（保留）**：
+> - 删除 v3 的"按建议优化"冗余（write 段 Step 7.5 循环已跑过最多 3 轮 copy-optimize，再跑一次方向不清）
+> - 删除"按国家自动本地化/翻译"主体（翻译变成独立按需任务，由用户主动发起）
+> - 保留"质检"作为终稿前最后一道关卡（调 translate skill 的 `--qc-only` 模式，跑全套 A-H 质检）
+> - 飞书回填**只 1 个字段**："文案" `fld6nFr6QN` ← qc-checked.md docx URL
+> - 调研报告字段 `fldeBNYVdg` 由 research 段已写过，本段不碰
+> - 底稿字段 `fldAfkaVxa` 不再使用
 
 ## 本段契约
 
 ```
-INPUTS:    output/optimized.md                （必须存在，由 write 段生成）
-           output/_handoff.json               （读 competitor_urls 字段，由 research 段写入）
-OUTPUTS:   input/competitor-copy.md           （由本段子 Agent 从竞品 URL 自动抓取生成）
-           output/compare-result.md
-           output/final.md                    （底稿 — 优化后 或 原样复制）
-           output/translated.md               （如选了翻译）
-           output/final-translated.md         （如走了翻译+质检）
-           output/finalize/compare-result.md  （副本）
-           output/finalize/final.md           （副本）
-           output/finalize/final-translated.md（副本，如有）
-           output/_handoff.json               （覆盖更新）
+INPUTS:    output/optimized.md                 （write 段胜出版，必须存在）
+           output/_handoff.json                （读 record_id；write 段已写）
+OUTPUTS:   output/final.md                     （= optimized.md 的副本，作为 qc 输入；保留留档不上传）
+           output/qc-checked.md                ★ 终版（A-H 质检后的英文稿）
+           output/qc-modifications.md          （质检修改清单，translate skill 副产物）
+           output/finalize/final.md            （副本）
+           output/finalize/qc-checked.md       （副本）
+           output/finalize/qc-modifications.md （副本）
+           output/_handoff.json                （覆盖更新）
 FORBIDDEN: 不得读 research.md / write.md / all.md
            不得调用 step1-extract / step2-gemini / landing-page
+           不得调用 copy-compare / copy-optimize（write 段已做完，不重跑）
            不得修改 output/optimized.md
-           主 agent 不得查看或处理 competitor_urls 具体内容（仅子 Agent 读）
-           主 agent 不得查看或处理 input/competitor-copy.md 或竞品页面正文
 HANDOFF:   写 output/_handoff.json，next_stage 设为 null（流程结束）
 ```
 
 ## 前置校验（子 Agent 跑前执行）
 
 1. `output/optimized.md` 存在
-2. `output/_handoff.json` 存在，且其中 `competitor_urls` 数组非空
+2. `output/_handoff.json` 存在，且其中 `record_id` 非空（research 段已写）
 
 校验失败的出口提示：
 > "⚠️ 前置条件未达到：
 >  - optimized.md 不存在 → 请先跑 /copy-workflow write
->  - _handoff.json 无 competitor_urls → 请先跑 /copy-workflow research"
-
-**新流程（竞品 URL 自动抓取）**：
-- 子 Agent 读 `_handoff.json` 的 `competitor_urls` 数组
-- 逐个用 WebFetch 抓取页面全文（失败的跳过，记录到错误列表）
-- 拼接生成 `input/competitor-copy.md`，每段前加 `## 竞品 N: <URL>\n\n`，分隔符 `\n\n---\n\n`
-- 全部抓取失败 → fallback 到"请用户手动粘贴到 input/competitor-copy.md"
+>  - _handoff.json 无 record_id → 请先跑 /copy-workflow research"
 
 ## 派发给子 Agent 的 prompt 骨架
 
 ```
-你是文案工作流的"对比+翻译终稿段（finalize）"执行 Agent，独立上下文，仅本任务。
+你是文案工作流的"质检+发布段（finalize）"执行 Agent，独立上下文，仅本任务。
 
 ## 本段契约
 INPUTS:    output/optimized.md
-           input/competitor-copy.md
-OUTPUTS:   output/compare-result.md
-           output/final.md
-           output/translated.md（可能）
-           output/final-translated.md（可能）
+           output/_handoff.json（读 record_id）
+OUTPUTS:   output/final.md
+           output/qc-checked.md
+           output/qc-modifications.md
            output/finalize/*（副本）
-           output/_handoff.json
+           output/_handoff.json（覆盖更新）
 FORBIDDEN: 不得读 copy-workflow/references/ 下除本段以外的文件
-           不得调用 step1-extract / step2-gemini / landing-page
-           不得修改 output/optimized.md 或 input/competitor-copy.md
+           不得调用 step1-extract / step2-gemini / landing-page / copy-compare / copy-optimize
+           不得修改 output/optimized.md
 
 ## 前置校验（必须先跑）
 1. 确认 output/optimized.md 存在
-2. 读 output/_handoff.json，确认含 `compare_scores`（write 段应已生成）
-   - 若缺失 → 说明 write 段跳过了对比（可能 competitor_urls 空），需要本段补做
+2. 读 output/_handoff.json，确认含 `record_id`
 任一不通过 → 立即退出，回传清晰的修复提示给主 agent。
 
-## 执行指令（3 步，串行 —— v2 方案 B 简化版）
+## 执行指令（4 步，串行）
 
-对比已由 write 段完成（output/write/compare-result.md 已存在），本段直接进入"询问优化 → 本地化 → 发布"。
+### 第 1 步：固化终稿底稿（无 optimize 冗余）
 
-**仅在 _handoff.json 无 compare_scores 时**，作为后备补一次：
-- 读 competitor_urls → WebFetch → copy-compare → 写 output/compare-result.md
-- 完整逻辑见 references/write.md 的 Step 7.5
+write 段 Step 7.5 已跑了最多 3 轮 copy-optimize 改稿循环，optimized.md 已是胜出版。
+本段不再重复跑 optimize。直接：
 
-### 第 1 步：决定是否按建议优化（默认 A 自动，无需询问 —— v2）
+```bash
+cp output/optimized.md output/final.md
+```
 
-**默认行为**：按 Q1=A（按 compare-result.md 的对比建议自动优化）。
-  → Read copy-optimize/SKILL.md 按其流程执行 → 输出 output/final.md
-
-**Override 参数**（从 `/copy-workflow finalize <args>` 解析，主 agent 透传）：
-
+**override**（极少用）：
 | 参数 | 行为 |
 |---|---|
-| 无参数（默认） | A：按建议优化 |
-| `--no-optimize` 或 `--optimize=B` | B：不优化，直接 `cp output/optimized.md output/final.md` |
-| `--optimize-instruction="..."` | C：按用户自定义指令修改，保存为 output/final.md |
-| `--ask` | 回退到原询问模式（A/B/C 让用户选） |
+| 无（默认） | 直接 cp |
+| `--optimize-instruction="..."` | 调 copy-optimize/SKILL.md，按用户自定义指令对 optimized.md 改一次 → final.md。仅在用户明确给改稿指令时启用 |
 
-⚠️ 不问用户，不暂停；用户想换行为就用参数。
+### 第 2 步：质检（调 translate skill 的 --qc-only 模式）
 
-### 第 2 步：按飞书"国家"字段自动本地化（完全自动，无需指定语言）
+Read C:/Users/叶晓雯/.claude/skills/copy-workflow/translate/SKILL.md，按其 **`--qc-only` 模式**执行：
 
-**来源**：用户在飞书 Base 的产品行已填"国家"字段 → research 段 Step 1.4 把它写入 `output/_handoff.json.country` → 本步直接读取并按下表自动推断 `target_market` / `target_language` / `localization_mode`。
-
-**不询问、不暂停、不需要用户敲语言名。** 飞书里填什么国家，这里就出对应市场的本地化稿。
-
-| `country` | target_market | target_language | localization_mode |
-|---|---|---|---|
-| **US** | US | en-US | regional |
-| **UK** 或 **GB** | UK | en-UK | regional |
-| **AU** | AU | en-AU | regional |
-| **CA** | CA | en-CA | regional |
-| NZ | NZ | en-NZ | regional |
-| IE | IE | en-IE | regional |
-| ZA | ZA | en-ZA | regional |
-| **DE** | DE | German | translation |
-| **FR** | FR | French | translation |
-| **IT** | IT | Italian | translation |
-| **ES** | ES | Spanish (Spain) | translation |
-| **MX** | MX | Mexican Spanish | translation |
-| JP | JP | Japanese | translation |
-| NL | NL | Dutch | translation |
-| KR | KR | Korean | translation |
-| BR | BR | Brazilian Portuguese | translation |
-| PT | PT | Portuguese (Portugal) | translation |
-| 未匹配 | — | — | 提醒用户补齐飞书"国家"字段后重跑，不进询问 |
-
-<details>
-<summary><b>进阶 override 参数</b>（通常不用 — 想临时忽略飞书国家字段时才加）</summary>
-
-| 参数 | 行为 |
-|---|---|
-| 无参数 | **默认**，按飞书 country 自动推断 |
-| `--lang=<语言>` 如 `--lang=French` | 临时强制指定 target_language（忽略 country） |
-| `--market=<国家>` 如 `--market=DE` | 临时强制指定 target_market（重新走表） |
-| `--mode=regional\|translation` | 临时强制指定本地化模式 |
-| `--ask` | 回退到"让用户选 A-J"的询问模式 |
-
-</details>
-
-**处理（确定参数后）**：
-
-Read C:/Users/叶晓雯/.claude/skills/copy-workflow/translate/SKILL.md，按其流程执行：
   - 源文件：output/final.md
-  - 传给 translate skill 的 target-language 参数 = <target_language>
-  - 若 localization_mode=regional：明确说明"同语种地区化：仅调整拼写、货币符号、度量单位、文化语境用词，不整段改写"
-  - 若 localization_mode=translation：完整翻译到目标语言
-  - 翻译/本地化产物：output/translated.md
-  - 按 translate/CHECKLIST.md 自动扫描并全自动修复（默认不暂停询问，除非 `--ask-qc`）
-  - 最终结果写 output/final-translated.md
+  - 命令语义：`/translate --qc-only output/final.md`
+  - 跳过 T1-T5 翻译/本地化主体（不翻译、不改人名/货币/机构）
+  - 直接跑 Step 6 + CHECKLIST 全维度（A-H + J）
+  - 默认全自动修复（不暂停询问），与 finalize 段无人值守需求对齐
+  - **override**：`--ask-qc` 启用"修哪些"的暂停询问
 
-**记录 target_market / target_language / localization_mode / optimize_mode 到 _handoff.json**（见第 4 步）
+**产物**：
+  - `output/qc-checked.md`（质检后版本）
+  - `output/qc-modifications.md`（被改动条目清单 + 修改计数）
 
-### 第 3 步：飞书云文档推送 + 多维表回填（自动）
+**质检维度说明**（来自 translate/SKILL.md `--qc-only` 模式）：
+  - A 翻译质量 / B 数字逻辑 / C 本地化元素 / D 结构完整性
+  - E 格式 / F 标点（长破折号） / G 反模板化 / H 引号与人名 / J 引号继承
+  - 即便源稿是英文（无翻译需求），仍跑 A/B/C 维度。原因：A 段可捕术语错误、B 段捕数字不一致、C 段捕英文版残留的 FDA 等机构名是否符合当前市场广告法规。误报率比"漏报"低。
 
-把 output/final.md 和 output/final-translated.md 推送为飞书云文档（docx），URL 回填到 research 段记录的多维表行。
+记录 `qc_modifications_count` 到 _handoff.json（见第 4 步）。
 
-#### 4.1 前置校验
+### 第 3 步：飞书云文档推送 + 多维表回填（仅"文案"字段）
 
-读 output/_handoff.json，确认含 `record_id`（research 段写入）、`product`、`country`、`target_language`。
-若 `record_id` 缺失 → 跳过本步，记 `feishu_publish: "skipped_no_record_id"`，直接进第 5 步。
+把 output/qc-checked.md 推送为飞书云文档（docx），URL 回填到 research 段记录的多维表行的"文案"字段。
 
-#### 4.2 本地 md → 飞书 docx（已固化命令）
+#### 3.1 前置校验
+
+读 output/_handoff.json，确认含 `record_id`（research 段写入）。
+若 `record_id` 缺失 → 跳过本步，记 `feishu_publish: "skipped_no_record_id"`，直接进第 4 步。
+
+#### 3.2 本地 md → 飞书 docx（已固化命令）
 
 **关键坑位**（实测）：
 - lark-cli **禁用绝对路径** → 必须先 cd 到 md 文件所在目录，用相对路径 `./<file.md>`
@@ -160,17 +127,11 @@ Read C:/Users/叶晓雯/.claude/skills/copy-workflow/translate/SKILL.md，按其
 ```bash
 cd output/finalize
 
-# 底稿（优化后英文稿）
+# 终版文案（A-H 质检后的英文稿）
 lark-cli docs +create \
-  --title "<product>-<country> 英文底稿（优化后）" \
-  --markdown "@./final.md" \
-  --json > /tmp/_docx_draft.json
-
-# 市场终稿（本地化后）
-lark-cli docs +create \
-  --title "<product>-<country> 市场文档（<target_language>）" \
-  --markdown "@./final-translated.md" \
-  --json > /tmp/_docx_market.json
+  --title "<product>-<country> 文案终稿（质检后）" \
+  --markdown "@./qc-checked.md" \
+  --json > /tmp/_docx_qc.json
 ```
 
 解析 JSON 拿 `obj_token` 或 `document_id`，构造 URL：
@@ -178,27 +139,25 @@ lark-cli docs +create \
 https://rcnzxk2pti9r.feishu.cn/docx/<obj_token>
 ```
 
-注意：lark-cli 返回的原始 `doc_url` 字段可能是 `www.feishu.cn` 域名——**必须替换为 `rcnzxk2pti9r.feishu.cn`** 再写入 Base。
+⚠️ lark-cli 返回的原始 `doc_url` 字段可能是 `www.feishu.cn` 域名 → **必须替换为 `rcnzxk2pti9r.feishu.cn`** 再写入 Base。
 
-#### 4.3 更新多维表字段（用 field_id，绝对不用字段名）
+#### 3.3 更新多维表"文案"字段（用 field_id）
 
-**字段 id 固化**（电商项目组_产品总表，已用 `lark-cli base +field-list` 实测确认）：
+**字段固化**（电商项目组_产品总表，已用 `lark-cli base +field-list` 实测确认）：
+
 | 字段中文名 | field_id | 类型 | 放什么 |
 |---|---|---|---|
-| 底稿 | **`fldAfkaVxa`** | text（URL 自动包装 markdown 链接） | 底稿 docx URL |
-| 文案 | **`fld6nFr6QN`** | text | 市场文档（本地化后的 final-translated.md）docx URL |
-
-⚠️ **历史注记**：旧版本 finalize.md 里写的 `fldOAH4kXu` 字段在实际表中**不存在**（可能是占位或已被删除），用户一直手动把市场文档放到"文案"字段 (`fld6nFr6QN`)。v3 起按用户实际习惯固化到"文案"字段。
+| 文案 | **`fld6nFr6QN`** | text | qc-checked.md docx URL |
 
 ```bash
 lark-cli base +record-upsert \
   --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
   --table-id tblVAw8vt81bsk5H \
   --record-id <record_id> \
-  --json '{"fldAfkaVxa":"<draft_url>","fld6nFr6QN":"<market_url>"}'
+  --json '{"fld6nFr6QN":"<qc_url>"}'
 ```
 
-#### 4.4 校验
+#### 3.4 校验
 
 ```bash
 lark-cli base +record-get \
@@ -207,55 +166,89 @@ lark-cli base +record-get \
   --record-id <record_id>
 ```
 
-确认两个字段都已写入 URL。
+确认 `data.record.文案` 字段含 URL。
 
-#### 4.5 失败处理（不阻断主流程）
+#### 3.5 失败处理（不阻断主流程）
 
 | 失败类型 | 处理 |
 |---|---|
-| lark-cli 未授权 / scope 不够 | 记 `feishu_publish: "failed_auth"` + 错误文字，继续进第 5 步。提示用户运行 `lark-cli auth login --domain base,drive,docs --recommend` 授权 |
+| lark-cli 未授权 / scope 不够 | 记 `feishu_publish: "failed_auth"` + 错误文字，继续进第 4 步。提示用户运行 `lark-cli auth login --domain base,docs --recommend` 授权 |
 | docx 创建成功但 base 更新失败 | 记 URL + 失败原因，让用户手动粘贴到多维表 |
 | record_id 缺失 | 记 `feishu_publish: "skipped_no_record_id"` |
-| 全部成功 | 记 `feishu_publish: "ok"` + 两个 URL |
+| 全部成功 | 记 `feishu_publish: "ok"` + URL |
 
 ### 第 4 步：产物副本 + _handoff
-copy 到分目录：
-  - output/compare-result.md    → output/finalize/compare-result.md
-  - output/final.md             → output/finalize/final.md
-  - output/final-translated.md  → output/finalize/final-translated.md（若存在）
 
-写 output/_handoff.json（覆盖）：
+copy 到分目录：
+  - output/final.md            → output/finalize/final.md
+  - output/qc-checked.md       → output/finalize/qc-checked.md
+  - output/qc-modifications.md → output/finalize/qc-modifications.md
+
+写 output/_handoff.json（覆盖；保留 research/write 段写入的所有字段，**不写**飞书调研字段——那俩在独立文件 `_handoff_feishu_research.json` 里，由子 Agent C 管理）：
+
+```json
 {
   "stage": "finalize",
   "completed_at": "<ISO>",
-  "compare_scores": {"a": <分>, "b": <分>},
-  "optimize_path": "<A|B|C>",
-  "target_market": "<US|UK|AU|CA|IE|NZ|ZA|DE|FR|IT|ES|MX|JP|NL|...>",
-  "target_language": "<en-US|en-UK|en-AU|en-CA|French|German|Italian|Spanish|...>",
-  "localization_mode": "<regional | translation>",  ← en-* 为 regional，其他为 translation
-  "feishu_publish": "<ok | failed_auth | skipped_no_record_id | partial>",
+  "product": "<保留>",
+  "country": "<保留>",
+  "record_id": "<保留>",
+  "competitor_urls": [...（保留）],
+  "scores": "<保留 write 段>",
+  "compare_status": "<保留 write 段>",
+  "compare_summary": "<保留 write 段>",
+  "qc_modifications_count": <int，translate --qc-only 报的修改数>,
+  "qc_dimensions_hit": [<命中维度，如 ["D","F","H"]>],
+  "optimize_path": "<A 默认 / C 用户 instruction>",
+  "feishu_publish": "<ok | failed_auth | skipped_no_record_id>",
   "feishu_docx_urls": {
-    "draft": "<底稿 docx URL 或 null>",
-    "market": "<市场文档 docx URL 或 null>"
+    "qc": "<qc-checked.md docx URL 或 null>"
   },
   "outputs": [
     "output/finalize/final.md",
-    "output/finalize/final-translated.md"
+    "output/finalize/qc-checked.md",
+    "output/finalize/qc-modifications.md"
   ],
   "next_stage": null,
-  "summary": "<A分 vs B分、优化路径、目标市场/语言、质检修几项、飞书回填状态>"
+  "summary": "<质检修 N 项、飞书回填状态>"
 }
+```
 
-### 第 5 步：落地后自动清理（v3 新增 —— 飞书是唯一留档，本地清干净）
+**飞书调研字段读取**：本段需要时（如 Step 5 清理判定 / 摘要展示），从 `output/_handoff_feishu_research.json` 单独读 `feishu_research_publish` + `feishu_research_url`，**绝不**把这俩字段合并写进 `_handoff.json`（会与子 Agent C 写入产生竞态）。
+
+### 第 5 步：落地后自动清理（飞书是唯一留档，本地清干净）
 
 **目的**：产品落地完成后，本地业务数据已无追溯价值（飞书 docx + Base 是永久留档），清干净避免数据堆积污染下次跑新产品。
 
 **前置条件**（必须同时满足才清）：
 - `_handoff.json` 里 `feishu_publish == "ok"`
-- `feishu_docx_urls.draft` 非空
-- `feishu_docx_urls.market` 非空
+- `feishu_docx_urls.qc` 非空
+- **`_handoff_feishu_research.json` 里 `feishu_research_publish == "ok"`**（v5.2 — 由子 Agent C 后台写入此独立文件，避开与本段 _handoff.json 写入的并发竞态）
+- **`_handoff_feishu_research.json` 里 `feishu_research_url` 非空**
 
-任一不满足 → **跳过清理**，本地所有文件原样保留，记 `cleanup: "skipped_feishu_not_ok"`，告知用户手动核实飞书后自行清或重跑 finalize。
+任一不满足 → **跳过清理**，本地所有文件原样保留，记 `cleanup: "skipped_feishu_not_ok"` + 缺失字段名，告知用户手动核实飞书后自行清或重跑 finalize / research。
+
+**判定脚本**（写到 output/_check_cleanup.js 然后 node 跑）：
+
+```javascript
+const fs = require('fs');
+const handoff = JSON.parse(fs.readFileSync('output/_handoff.json', 'utf8'));
+let research = {};
+try { research = JSON.parse(fs.readFileSync('output/_handoff_feishu_research.json', 'utf8')); }
+catch(e) { /* 文件不存在 = 子 C 还没跑完或失败 */ }
+
+const ok = handoff.feishu_publish === 'ok'
+  && handoff.feishu_docx_urls && handoff.feishu_docx_urls.qc
+  && research.feishu_research_publish === 'ok'
+  && research.feishu_research_url;
+
+console.log(JSON.stringify({
+  can_cleanup: !!ok,
+  feishu_publish: handoff.feishu_publish || null,
+  feishu_research_publish: research.feishu_research_publish || null,
+  research_url: research.feishu_research_url || null
+}));
+```
 
 **清理动作**（前置条件满足后按顺序执行）：
 
@@ -269,7 +262,7 @@ cd ..
 
 # 2. 清 output/ 顶层文件 + 三个副本子目录内容（保留目录结构本身）
 cd output/
-find . -maxdepth 1 -type f -delete             # 含 _handoff.json / _extract.js / _snapshot.yaml / 所有业务 md
+find . -maxdepth 1 -type f -delete             # 含 _handoff.json / _handoff_feishu_research.json / _extract.js / _snapshot.yaml / 所有业务 md
 rm -rf finalize/* research/* write/*           # 清子目录内容但保留空目录
 cd ..
 ```
@@ -277,24 +270,21 @@ cd ..
 **清理后状态**：
 - `input/`：只剩 `competitor-copy-template.md` / `product-info-template.txt` / `research-report-template.md`
 - `output/`：只剩 `finalize/` / `research/` / `write/` 三个空目录
-- `_handoff.json` 已删（下次 /copy-workflow research 重新生成）
+- `_handoff.json` + `_handoff_feishu_research.json` 已删（下次 /copy-workflow research 重新生成）
 
 **⚠️ 重要**：子 Agent 必须在**清理动作执行前**把回传给主 agent 的摘要字符串在内存中组装完毕，清理后 `_handoff.json` 不存在、主 agent 无法再读。
-
-**Edge case**：如果用户习惯把市场终稿手动放到"文案"或其他非 `fldOAH4kXu` 字段（如 Teeth20-US 的历史情况），`feishu_docx_urls.market` 会是 null，Step 5 会跳过清理。此时需用户手动清或改 finalize 第 3 步的回填目标字段。
 
 ## 回传给主 agent（必须简短，< 500 token）
 
 **必须在 Step 5 清理前组装完毕**，因为清理后 `_handoff.json` 已不存在。
 
 仅回传：
-- 对比得分（我方 X / 竞品 Y）
-- 优化路径（A / B / C）
-- 目标市场 + 目标语言 + 本地化模式（regional / translation）
-- 质检修改数
+- 优化路径（A 默认 / C 用户 instruction）
+- 质检修改数 + 命中维度
 - 最终产物路径（清理前的路径；清理后已不存在，仅作参考）
-- 飞书回填状态（ok / failed_auth / skipped / partial）+ 两个 docx URL（若 ok）
-- **清理结果**（`cleanup: ok | skipped_feishu_not_ok`）
+- 飞书"文案"字段回填状态（ok / failed_auth / skipped）+ qc docx URL（若 ok）
+- 飞书"调研报告"字段状态（**从 `_handoff_feishu_research.json` 读 `feishu_research_publish`**）+ research docx URL
+- **清理结果**（`cleanup: ok | skipped_feishu_not_ok` + 缺失字段名）
 - 不贴任何文案全文
 ```
 
@@ -303,14 +293,16 @@ cd ..
 ```
 ─────────────────────────────
 🎉 全流程完成
-📊 对比得分：我方 <A> / 竞品 <B>（差 <±N>）
-🛠 优化路径：<A 按建议 / B 保持原样 / C 用户指令>
-🌐 终稿目标：<市场-语言，如 US-en-US（地区化）/ DE-German（翻译）>
-✓ 质检：<修改 N 项 / 零问题>
-📋 飞书回填：<✅ 成功 / ⚠️ 失败原因 / - 跳过>
-📄 底稿文档：<URL 或 "—">
-📄 市场终稿文档：<URL 或 "—">
+🛠 优化路径：<A 默认（无 optimize 冗余）/ C 用户 instruction>
+✓ 质检：修改 N 项（命中维度：D/F/H）
+📋 飞书回填：
+   - 文案 (fld6nFr6QN)：<✅ 成功 / ⚠️ 失败原因 / - 跳过>
+   - 调研报告 (fldeBNYVdg)：<✅ research 段已填 / ⚠️ 失败原因 / - 跳过>
+📄 文案终稿 docx：<URL 或 "—">
+📄 调研报告 docx：<URL 或 "—">
 🧹 本地清理：<✅ 已清 input/output / ⚠️ 跳过（飞书未全部留档，本地 output/finalize/ 仍保留）>
+
+如需翻译 → 用户主动提需，调 /translate <target-language> output/finalize/qc-checked.md
 ─────────────────────────────
 ```
 
