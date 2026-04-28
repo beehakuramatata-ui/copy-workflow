@@ -28,6 +28,10 @@ output/v2-*/
 # Playwright 临时 snapshot
 .playwright-mcp/
 
+# 一次性调试脚本（产品/路径硬编码，不通用）
+_find_record.js
+_reformat.js
+
 # OS / editor
 .DS_Store
 Thumbs.db
