@@ -1,6 +1,15 @@
-# references/finalize.md — 质检+发布段（v5.2）
+# references/finalize.md — 质检+发布模块（v5.6 — 已并入 write 段，不再单独触发）
 
-> 主 agent 按本文件派一个独立子 Agent 跑完本段。主 agent 绝不直接读 translate / copy-optimize 的 SKILL.md 或 CHECKLIST.md。
+> ⚠️ **v5.6 起本文件不再作为独立段被用户调用**。其 4 步流程（cp + --qc-only + 飞书"文案"字段回填 + 本地清理）已**内置进 write 段子 Agent**（见 `write.md` Step 8）。
+>
+> **本文件保留作用**：
+> 1. **write 段子 Agent 的内部模块文档** — write 子 Agent 跑完 Step 7.5 后会 Read 本文件并按其 4 步流程执行
+> 2. **兜底命令 `/copy-workflow finalize`** — 仅当 write 段失败、需要单独重跑质检+回填时手动触发
+> 3. **poll-fill 不再单独派 finalize 子 Agent** — 因为 write 段已内置
+>
+> **不再适用**：
+> - all 模式不再叙述为"3 段串联"，而是 2 段（research + write 一站式）
+> - 主菜单"finalize"选项保留但标记"内部模块/兜底命令"
 >
 > **v5.2 变更（2026-04-28）**：
 > - **Step 5 清理前置改读独立文件 `_handoff_feishu_research.json`**（research 段子 Agent C 写入），不再依赖 _handoff.json 里的 feishu_research_* 字段（v5.1 那个字段被本段 _handoff.json 覆盖丢失，导致 Step 5 永远跳过清理）

@@ -224,15 +224,11 @@ write 段会自动：
 - Step 7.5 竞品对标循环（Step 7.5.1 前置校验：发现 `competitor_urls` 为空 → 跳过对标循环，记 `compare: "skipped_no_competitor_urls"`，继续）
 - 输出 `output/optimized.md`（按 country 推断的 target_language 直出）
 
-#### 3.7 派 finalize 段子 Agent
+#### 3.7（v5.6 已并入 write 段，本步骤删除）
 
-按 `references/finalize.md` 的派发模板派子 Agent。
+**v5.6 起 write 段子 Agent 内置 finalize 全套**（cp + --qc-only + 飞书"文案"字段回填 + 本地清理），见 write.md Step 8。
 
-finalize 段会自动：
-- Step 1: cp optimized → final
-- Step 2: --qc-only 质检 → qc-checked.md
-- Step 3: 上传飞书 docx + 回填"文案"字段（fld6nFr6QN）
-- Step 5: 清理本地（前置 ok 时）
+poll-fill 不再单独派 finalize 子 Agent — Step 3.6 派完 write 段子 Agent 后，等 write 子 Agent 一站式跑完即可（飞书已回填、本地已清）。直接进 Step 3.8 记录结果。
 
 #### 3.8 记本产品结果
 

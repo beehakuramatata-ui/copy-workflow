@@ -1,6 +1,12 @@
-# references/write.md — 生成+优化段（Stage 3）
+# references/write.md — 生成+对标+质检+飞书回填一站式段（v5.6）
 
 > 主 agent 按本文件派一个独立子 Agent 跑完本段。主 agent 绝不直接读 landing-page/SKILL.md / WRITER.md / REVIEWER.md。
+>
+> **v5.6 变更（2026-04-28）— write 内置 finalize**：
+> - write 段子 Agent 跑完 Stage 1-7 + Step 7.5 后，**自动调用 finalize 全套**（cp + --qc-only 质检 + 飞书"文案"字段回填 + 本地清理），不再回到主 agent 等下一步
+> - **取消独立 `/copy-workflow finalize` 段**作为常规调用入口（保留作为 write 失败后的兜底命令）
+> - 用户视角：`/copy-workflow write` 跑完即是"飞书已回填+本地已清"完整闭环
+> - all 模式从 3 段叙述简化为 2 段（research → write），poll-fill 也不再单独派 finalize
 
 ## 本段契约
 
@@ -415,8 +421,49 @@ for N in 1..3:
 ─────────────────────────────
 ```
 
+## Step 8（v5.6 新增）：write 子 Agent 内置 finalize 全套
+
+**触发条件**：Step 7.5 完成后，`output/optimized.md` 已是胜出版。
+
+**执行**：write 段子 Agent **不**回传给主 agent 等下一步，**直接 Read `references/finalize.md` 并按其 4 步流程执行**：
+
+1. **finalize Step 1 — 固化终稿底稿**：`cp output/optimized.md output/final.md`
+2. **finalize Step 2 — 调 translate skill `--qc-only` 模式跑 A-H 质检**：产出 `output/qc-checked.md` + `output/qc-modifications.md`
+3. **finalize Step 3 — 飞书云文档推送 + "文案"字段回填**：上传 qc-checked.md 为飞书 docx → 回填多维表 `fld6nFr6QN` 字段（值是飞书云文档 URL）
+4. **finalize Step 4 — 产物副本 + _handoff.json 更新**：copy 到 `output/finalize/`，写 `_handoff.json` 字段（`feishu_publish` / `feishu_docx_urls.qc` / `qc_modifications_count` 等）
+5. **finalize Step 5 — 落地后自动清理**：满足前置条件（feishu_publish=ok + feishu_docx_urls.qc 非空 + `_handoff_feishu_research.json` 里 `feishu_research_publish == "ok"`） → 清理本地 input/ output/
+
+**异常**：
+- finalize Step 1-4 任一失败 → 保留中间产物，回传失败原因给主 agent。**不**走 Step 5 清理（确保产物可手工修复）
+- finalize Step 5 清理前置不满足 → 跳过清理，飞书已回填（不影响业务），本地保留供下次手动核对
+
+## 子 Agent 回传给主 agent（v5.6 — 一站式完成后才回传）
+
+write 子 Agent 必须在 finalize Step 5（成功或跳过）后才回传，回传摘要含：
+
+- 3 轮 Writer-Reviewer 评分 + Step 7.5 对标 diff trend + 胜出轮（见上文 _handoff.json 字段）
+- **finalize 段指标**：`qc_modifications_count` + `feishu_publish` 状态 + qc docx URL
+- **清理结果**：`cleanup: ok | skipped_feishu_not_ok`
+- 提示用户："✅ 飞书'文案'字段已回填 + 本地已清，全流程闭环完成"
+
+## 主 agent 展示给用户的格式（v5.6 一站式）
+
+```
+─────────────────────────────
+✅ write 段一站式完成（生成+对标+质检+飞书回填）
+📊 Writer-Reviewer 3 轮评分：R1 <分> → R2 <分> → R3 <分>（<通过/未通过>）
+⚖  竞品对标循环：<compare_summary，如 "R1 +5 → R2 +9 R2 达标">
+🏆 胜出轮：R<winner_round>（差距 <+N>）
+✓ 质检：修改 N 项（命中维度：D/F/H）
+📋 飞书"文案"字段回填：<✅ 成功 / ⚠️ 失败原因>
+📄 飞书云文档：<URL 或 "—">
+🧹 本地清理：<✅ 已清 / ⚠️ 跳过原因>
+─────────────────────────────
+```
+
 ## 异常
 
 - `input/research-report.md` 不达标 → 退出，由用户修复后重跑
 - 某轮 Writer/Reviewer 失败 → 保留上一轮稿件，回报失败点，用户可选从失败轮重跑
 - Step 7.5 循环内某轮 compare/optimize 失败 → 见 7.5.3 "异常处理"段
+- Step 8 finalize 任一步失败 → 保留中间产物 + 报失败位置，**不影响 write 段已完成的产物**（用户可手动跑 `/copy-workflow finalize` 兜底重试质检+回填）

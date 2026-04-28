@@ -1,6 +1,12 @@
-# references/all.md — 全流程串联（research → write → finalize）— v5.3
+# references/all.md — 全流程串联（research → write 一站式）— v5.6
 
-> 主 agent 按本文件**依次**派三个独立子 Agent 跑三段。**不跨段继承上下文。**
+> 主 agent 按本文件**依次**派**两个**独立子 Agent 跑两段（v5.6 简化）。**不跨段继承上下文。**
+>
+> **v5.6 变更（2026-04-28 — 质检+回填并入 write 段）**：
+> - **从三段串联简化为两段串联**：research → write（write 内置 finalize 全套）
+> - 主 agent 不再单独派 finalize 子 Agent — write 段子 Agent 跑完会自动接 finalize 4 步（cp + --qc-only 质检 + 飞书回填 + 本地清理）
+> - 用户视角：跑 `/copy-workflow all` → research 完成 → write 一站式跑完 → 飞书"文案"字段已回填 + 本地已清，全流程闭环
+> - finalize 命令保留作兜底（write 失败重试用），不在 all 模式中单独叙述
 >
 > **v5.3 变更（2026-04-28 — 全流程自动化，零段间暂停）**：
 > - **去除 research → write 段间暂停**：调研报告写入 input/research-report.md 后立即派 write 子 Agent

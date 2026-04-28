@@ -28,11 +28,11 @@ argument-hint: "<research | write | finalize | all> [产品名]"
 | 参数 | 行为 |
 |---|---|
 | `research [产品名]` | Read `references/research.md`，按其指引派子 Agent 跑调研段（含调研报告飞书归档到"调研报告"字段。**调研报告保持英文 Deep Research 高质量**） |
-| `write` | Read `references/write.md`，按其指引派子 Agent 跑生成+优化段（**v5 — Writer 按 country 直接产出目标语言文案**；Step 7.5 自动竞品对标循环，含智能语言一致性判定） |
-| `finalize` | Read `references/finalize.md`，按其指引派子 Agent 跑质检+发布段（v4 — 无 optimize 冗余；--qc-only 质检在目标语言稿上跑 + 飞书回填"文案"字段） |
-| `all [产品名]` | Read `references/all.md`，按其指引编排三段串联 |
-| `poll-fill` | Read `references/poll-fill.md`，扫描飞书产品总表 → 找出"调研已填+文案空"的产品 → 串行补跑 write+finalize（**v5.5** — 跳过 Gemini 调研段，直接从飞书拉调研报告） |
-| `poll-fill --enable-cron` | 注册 mcp__scheduled-tasks 每 30 分钟自动跑 poll-fill |
+| `write` | Read `references/write.md`，按其指引派子 Agent 跑**生成+对标+质检+飞书回填一站式段**（**v5.6** — 内置 finalize；3 轮 Writer-Reviewer + Step 7.5 对标 + --qc-only 质检 + 飞书"文案"字段回填 + 本地清理） |
+| `finalize` | ⚠️ **v5.6 起内置在 write 段，常规情况不需要单独调用**。仅作 write 失败后兜底重跑质检+回填用 |
+| `all [产品名]` | Read `references/all.md`，按其指引编排**两段串联**（research → write 一站式，v5.6 简化） |
+| `poll-fill` | Read `references/poll-fill.md`，扫描飞书产品总表 → 找出"调研已填+文案空"的产品 → 串行补跑 write 一站式（**v5.6** — write 内置 finalize，poll-fill 不再单独派 finalize） |
+| `poll-fill --enable-cron` | 注册 mcp__scheduled-tasks 每 2 小时自动跑 poll-fill |
 | `poll-fill --disable-cron` | 关闭定时任务 |
 | 空 / 未知参数 | 展示菜单，询问用户 |
 
