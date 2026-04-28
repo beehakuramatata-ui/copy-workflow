@@ -3,8 +3,10 @@
 > 主 agent 按本文件执行：扫描飞书产品总表 → 找出"调研报告已填 / 文案为空"的产品行 → **串行**触发 write + finalize 段补跑文案 → 自动回填飞书"文案"字段。
 >
 > **触发方式**：
-> 1. 自动 — 由 `mcp__scheduled-tasks` 注册的 30 分钟周期任务唤起
+> 1. 自动 — 由 `mcp__scheduled-tasks` 注册的 **2 小时**周期任务唤起（cron `17 */2 * * *`，避开整点拥堵）
 > 2. 手动 — 用户跑 `/copy-workflow poll-fill` 立即扫一次
+>
+> **为什么是 2 小时不是 30 分钟**：单产品 ~12 min（write 5-10 + finalize 3-7），3 个产品就 ~36 min 撞下次扫描。2 小时间隔够 8-10 个产品串行不撞车。
 
 ## 本段契约
 
@@ -19,6 +21,38 @@ HANDOFF:   不写跨段 _handoff.json（每个产品独立闭环）
 ```
 
 ## 执行流程
+
+### Step 0：Lock 防重入（v5.5 必做，第一步）
+
+每次启动前先检查 lock file：
+
+```bash
+LOCK_FILE="output/.poll-fill.lock"
+
+if [ -f "$LOCK_FILE" ]; then
+  # 检查 lock 是否陈旧（PID 不存在 / 锁存在 > 4 小时）
+  LOCK_AGE_HOURS=$(node -e "
+    const fs = require('fs');
+    const ageMs = Date.now() - fs.statSync('$LOCK_FILE').mtimeMs;
+    console.log(ageMs / 1000 / 3600);
+  ")
+  if (( $(echo "$LOCK_AGE_HOURS < 4" | bc -l) )); then
+    echo "⏭ 上一轮 poll-fill 还在跑（锁存活 $LOCK_AGE_HOURS 小时），跳过本轮"
+    exit 0
+  else
+    echo "⚠️ 检测到陈旧 lock（> 4 小时），可能上轮异常退出。强制接管。"
+    rm "$LOCK_FILE"
+  fi
+fi
+
+# 注册 lock（含时间戳 + 产品数预估）
+echo "{\"started_at\":\"$(date -Iseconds)\",\"pid\":$$}" > "$LOCK_FILE"
+
+# 注册退出钩子（无论成功失败都删 lock）
+trap 'rm -f "$LOCK_FILE"' EXIT
+```
+
+**Why**：单产品 ~12 min，多产品串行可能跑超 2 小时撞下次扫描。lock 保证同一时刻最多 1 个 poll-fill 实例在跑。陈旧 lock 4 小时阈值是兜底（防止 Claude Code crash 留死锁）。
 
 ### Step 1：扫描飞书产品总表
 

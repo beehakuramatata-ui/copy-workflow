@@ -32,6 +32,9 @@ output/v2-*/
 _find_record.js
 _reformat.js
 
+# poll-fill 运行时锁
+output/.poll-fill.lock
+
 # OS / editor
 .DS_Store
 Thumbs.db
