@@ -21,6 +21,37 @@
 - [ ] ⚠️ 医疗职称已本地化（Dermatologist→目标语言等效职称）
 - [ ] ⚠️ "Clinically tested/proven" 类表述符合目标市场广告法规
 
+#### C.5 — 市场必含元素清单（漏检规则）
+
+**目的说明**：
+v4 起 C 维度只检查"不该出现的本地化元素"（如 £ 在 US 稿、NHS 在 AU 稿）。但漏检"该出现而未出现的本地化元素"（监管机构、合规声明）。Writer 在挑选权威背书时容易偏向调研报告中的国际科学权威（如 King's College London、PubMed），忘了补本国监管机构。本项强制检查终稿中是否含目标市场的核心信任元素。
+
+**检查清单（按市场分类）**：
+
+| 目标市场 | 必含元素（任一缺失即标 C 命中） | 推荐位置 |
+|---|---|---|
+| US | "FDA-registered" / "FDA-registered facility" / "FDA registration"（≥ 1 处；不得用 FDA-approved / FDA-cleared 等违规医疗主张） | Trust Bar / Guarantee / FAQ |
+| UK / GB | "MHRA" 或 "UK MHRA-registered" 或 "GMP standard" 或 "ISO 22716"（≥ 1 处） | 同上 |
+| AU | "TGA-listed" / "TGA registration"（≥ 1 处；不得用 TGA-approved） | 同上 |
+| CA | "Health Canada / NPN / DIN"（≥ 1 处适用类目） | 同上 |
+| FR / DE / IT / ES / NL（EU） | "CE-marked" / "EU GMP" / "Notified Body"（≥ 1 处） | 同上 |
+| JP | "厚労省 / PMDA / 医薬部外品" 等表述（≥ 1 处） | 同上 |
+| KR | "KFDA / MFDS / CGMP"（≥ 1 处） | 同上 |
+| 其他市场 | 调研报告 §10 Trust Architecture 或 §22 Safety FAQ 提到的本地监管机构（自动收集） | 同上 |
+
+**修复策略**（命中时自动补，默认 --qc-only 全自动模式）：
+- 在 Trust Bar / Hero 段补一行如 "Manufactured in an FDA-Registered Facility"
+- 在 Risk Reversal / Guarantee 段补 "Made in an FDA-registered facility under GMP standards"
+- 在 Safety / FAQ 段（"Is it safe?"）补 "Manufactured in an FDA-registered facility, formulated with..."
+- 不要删除既有国际科学权威（King's College London / PubMed / NIH 等是科学背书，与监管机构互补，**保留并并列**）
+- 平衡比例：科学权威 vs 监管权威 ≈ 2:1 ~ 3:1（监管不要喧宾夺主，但必须出现）
+
+**违规示例**（必须避免）：
+- "FDA-approved" — 除非真有审批，否则违规医疗主张
+- "FDA-cleared" — 同上
+- "Clinically proven by FDA" — 不能这么说
+- 安全表述：只能用 "FDA-registered facility" / "registered with FDA" / "manufactured in an FDA-registered facility"
+
 ### D. 结构完整性（逐Section核对）
 - [ ] Section数量与原文一致
 - [ ] 每个Section的所有元素数量与原文一致

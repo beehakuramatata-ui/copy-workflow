@@ -1,12 +1,15 @@
 ---
 name: translate
-description: 跨境电商落地页文案翻译+质检系统。将 output/final.md 翻译为指定目标语言并对照 CHECKLIST.md 逐项质检。Use when user mentions "翻译", "translate", "翻译落地页", or finishes copy-compare/optimize and needs target-language output.
+description: 跨境电商落地页文案翻译+质检系统。将 output/final.md 翻译为指定目标语言并对照 CHECKLIST.md 逐项质检；支持 --qc-only 模式（剥离翻译，只跑全套质检 A-H）。Use when user mentions "翻译", "translate", "翻译落地页", "质检", "qc-only", or finishes copy-compare/optimize and needs target-language output OR pure quality check.
 disable-model-invocation: false
-argument-hint: "<target-language> [source-file]"
+argument-hint: "<target-language | --qc-only> [source-file]"
 ---
 
-# 跨境电商落地页翻译+质检系统 V2.2（合并版）
+# 跨境电商落地页翻译+质检系统 V2.3（合并版）
 
+> V2.3 变更：
+> - **新增 `--qc-only` 模式**：剥离翻译/本地化主体，对英文底稿直接跑全套质检（A-H + J）。供 copy-workflow finalize 段使用
+>
 > V2.2 变更：
 > - 质检默认自动执行（取消"是否质检"询问），只保留"改不改/改哪些"的暂停
 > - 新增 **J 维度**（引号与人名规则，继承自 Step3 写作规范）
@@ -19,6 +22,35 @@ argument-hint: "<target-language> [source-file]"
 **第四步（仅执行了第三步）**：**自动执行**风格化质检，然后询问用户修改选项
 
 > ⚠️ 重要变更：质检默认执行，不再询问"是否质检"。用户只需决定"改不改、改哪些"。
+
+---
+
+## 🚀 `--qc-only` 模式（剥离翻译，只跑质检）
+
+**调用方式**：
+```
+/translate --qc-only [source-file]
+```
+- 不指定 source-file 时，默认源 = `output/final.md`
+- 不需要也不解析 target-language（不翻译，所以无目标语言概念）
+
+**行为**：
+1. **跳过** T1-T5 翻译主体（包含本土化、人名转换、货币转换、风格化等翻译期处理）
+2. **跳过** "第一步纯翻译" + "第三步风格化"
+3. **直接进入 Step 6 质检**：把 source 当被检稿，对照 `CHECKLIST.md` 全维度（A-H + J）逐项扫描
+   - 默认 **全自动修复**（不暂停询问），与 finalize 段无人值守需求对齐
+   - override：加 `--ask-qc` 启用"修哪些"的暂停询问
+4. **产物**：`output/qc-checked.md`（质检后版本，文件名固定，不叫 translated.md 避免歧义）
+5. **附产物**：`output/qc-modifications.md`（被改动条目清单 + 计数，供 finalize 段写入 `_handoff.json.qc_modifications_count`）
+
+**质检维度说明**：
+- 即便源稿是英文（无翻译需求），仍跑 A/B/C 维度（翻译质量/数字/本地化元素）。原因：A 段会捕到术语错误、B 段捕数字不一致、C 段捕英文版残留的 FDA 等机构名是否符合当前市场广告法规。误报率比"漏报"低。
+- D-H + J 是结构/格式/标点/反套路/引号通用项，对英文底稿天然有意义。
+
+**回传给主调用方**（finalize 段子 Agent 读取）：
+- 修改条数 `qc_modifications_count`
+- 命中维度（如 `["D", "F", "H"]`）
+- 产物路径 `output/qc-checked.md`
 
 ---
 
@@ -188,7 +220,7 @@ argument-hint: "<target-language> [source-file]"
 - [ ] testimonial_title：1个，6-10个单词
 - [ ] Review1-8_title：8个，每个2-5个单词（基于评价内容的功效表达）
 - [ ] Review1-8_content：8个，长度见下方分布要求
-- [ ] Review1-8_buyer_name：8个，每个2个单词（完整全名）
+- [ ] Review1-8_buyer_name：8个，**每个仅 1 个单词（仅名字 first name，禁止包含姓氏 last name）**
 - [ ] 评论长度分布：3条长评价(80-120词) + 3条中评价(40-60词) + 2条短评价(15-30词)
 
 **FAQ_Section（Section 10）必含元素：**
@@ -205,7 +237,7 @@ argument-hint: "<target-language> [source-file]"
 
 **Before_After_Section（补充板块，如存在）必含元素：**
 - [ ] before_after_title：1个，最多12个单词
-- [ ] comment_1-10_name：10个，格式为"姓名, 年龄"
+- [ ] comment_1-10_name：10个，**格式为"名字, 年龄"（仅 first name + 年龄，禁止姓氏，如 `Catherine, 76`；逗号必须是英文半角逗号 `,`，禁止中文全角逗号 `，`）**
 - [ ] comment_1-10_selling_point_1：10个，每个2-3个单词，全大写
 - [ ] comment_1-10_selling_point_2：10个，每个2-3个单词，全大写
 - [ ] comment_1-10_title：10个，每个5-10个单词
