@@ -33,8 +33,26 @@ argument-hint: "<research | write | finalize | all> [产品名]"
 | `all [产品名]` | Read `references/all.md`，按其指引编排**两段串联**（research → write 一站式，v5.6 简化） |
 | `poll-fill` | Read `references/poll-fill.md`，扫描飞书产品总表 → 找出"调研已填+文案空"的产品 → 串行补跑 write 一站式（**v5.6** — write 内置 finalize，poll-fill 不再单独派 finalize） |
 | `poll-fill --enable-cron` | 注册 mcp__scheduled-tasks 每 2 小时自动跑 poll-fill |
-| `poll-fill --disable-cron` | 关闭定时任务 |
+| `poll-fill --disable-cron` | 关闭 poll-fill 定时任务 |
+| `poll-fill-research` | Read `references/poll-fill-research.md`，扫描飞书产品总表 → 找出"基础信息齐+调研空"的产品 → 串行补跑 research 段（**v5.7** — 与 poll-fill 对偶，自动跑 Gemini Deep Research+飞书回填调研报告字段） |
+| `poll-fill-research --enable-cron` | 注册 mcp__scheduled-tasks 每 4 小时自动跑 poll-fill-research（**默认未启用**，需用户主动开启 — 因为占用 Gemini Pro quota + Chrome 浏览器） |
+| `poll-fill-research --disable-cron` | 关闭 poll-fill-research 定时任务 |
 | 空 / 未知参数 | 展示菜单，询问用户 |
+
+## 完整自动化使用方式（v5.7）
+
+用户在飞书表填好"产品(英) + 国家 + 竞品链接 + 品牌"后，启用两个定时器：
+
+```
+/copy-workflow poll-fill --enable-cron               # 已默认启用
+/copy-workflow poll-fill-research --enable-cron      # 你拍板后再启用
+```
+
+**对偶状态机**：
+- poll-fill-research（4h）扫"基础齐 / 调研空" → 跑 research → 回填飞书"调研报告"
+- poll-fill（2h）扫"调研齐 / 文案空" → 跑 write 一站式 → 回填飞书"文案"
+
+最终用户**完全甩手**，只需在飞书表填基础信息，剩下从调研到落地页文案全自动。
 
 ### 空参数菜单
 
