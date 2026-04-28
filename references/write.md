@@ -31,6 +31,30 @@ HANDOFF:   写 output/_handoff.json，next_stage 设为 "finalize"
 校验失败的出口提示：
 > "⚠️ input/research-report.md 仍是空模板或不足 500 字符。请先粘贴 Gemini 返回的调研报告，然后重跑 /copy-workflow write。"
 
+### v5.5 兜底：本地缺失时从飞书下载（poll-fill 场景）
+
+**v5.5 新增**：如果 `input/research-report.md` 不存在 **且** `output/_handoff_feishu_research.json` 含 `feishu_research_url` → 自动从飞书下载，不让用户走"必须 research 段先跑"的死胡同。
+
+**触发条件**（任一成立即触发自动下载）：
+1. `_handoff_feishu_research.json` 存在 + `feishu_research_url` 非空
+2. `_handoff.json.gemini_mode === "downloaded_from_feishu"`（poll-fill 场景显式标记）
+
+**下载逻辑**：
+
+```bash
+# 从 URL 提取 obj_token
+# 例：https://rcnzxk2pti9r.feishu.cn/docx/Xyz123 → obj_token=Xyz123
+OBJ_TOKEN=$(node -e "const u='$RESEARCH_URL'; const m=u.match(/\/docx\/([A-Za-z0-9]+)/); console.log(m?m[1]:'')")
+
+# 用 lark-cli 导出 docx 为 markdown
+lark-cli docs +get \
+  --doc-token "$OBJ_TOKEN" \
+  --format markdown \
+  > input/research-report.md
+```
+
+**下载后再跑前置校验 1-3**。校验失败 → 退出，回报"飞书 docx 下载/转换异常"，由 poll-fill 上层处理。
+
 ## 派发给子 Agent 的 prompt 骨架
 
 ```

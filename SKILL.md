@@ -31,7 +31,10 @@ argument-hint: "<research | write | finalize | all> [产品名]"
 | `write` | Read `references/write.md`，按其指引派子 Agent 跑生成+优化段（**v5 — Writer 按 country 直接产出目标语言文案**；Step 7.5 自动竞品对标循环，含智能语言一致性判定） |
 | `finalize` | Read `references/finalize.md`，按其指引派子 Agent 跑质检+发布段（v4 — 无 optimize 冗余；--qc-only 质检在目标语言稿上跑 + 飞书回填"文案"字段） |
 | `all [产品名]` | Read `references/all.md`，按其指引编排三段串联 |
-| 空 / 未知参数 | 展示四选一菜单，询问用户 |
+| `poll-fill` | Read `references/poll-fill.md`，扫描飞书产品总表 → 找出"调研已填+文案空"的产品 → 串行补跑 write+finalize（**v5.5** — 跳过 Gemini 调研段，直接从飞书拉调研报告） |
+| `poll-fill --enable-cron` | 注册 mcp__scheduled-tasks 每 30 分钟自动跑 poll-fill |
+| `poll-fill --disable-cron` | 关闭定时任务 |
+| 空 / 未知参数 | 展示菜单，询问用户 |
 
 ### 空参数菜单
 
