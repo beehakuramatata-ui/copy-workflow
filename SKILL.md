@@ -27,9 +27,9 @@ argument-hint: "<research | write | finalize | all> [产品名]"
 
 | 参数 | 行为 |
 |---|---|
-| `research [产品名]` | Read `references/research.md`，按其指引派子 Agent 跑调研段 |
-| `write` | Read `references/write.md`，按其指引派子 Agent 跑生成+优化段 |
-| `finalize` | Read `references/finalize.md`，按其指引派子 Agent 跑对比+翻译终稿段 |
+| `research [产品名]` | Read `references/research.md`，按其指引派子 Agent 跑调研段（含调研报告飞书归档到"调研报告"字段。**调研报告保持英文 Deep Research 高质量**） |
+| `write` | Read `references/write.md`，按其指引派子 Agent 跑生成+优化段（**v5 — Writer 按 country 直接产出目标语言文案**；Step 7.5 自动竞品对标循环，含智能语言一致性判定） |
+| `finalize` | Read `references/finalize.md`，按其指引派子 Agent 跑质检+发布段（v4 — 无 optimize 冗余；--qc-only 质检在目标语言稿上跑 + 飞书回填"文案"字段） |
 | `all [产品名]` | Read `references/all.md`，按其指引编排三段串联 |
 | 空 / 未知参数 | 展示四选一菜单，询问用户 |
 
@@ -38,10 +38,12 @@ argument-hint: "<research | write | finalize | all> [产品名]"
 ```
 请选择要跑哪一段：
 
-A. /copy-workflow research [产品名]    — 调研段（Stage 1-2）：提炼卖点 + 生成 Gemini 提示词
-B. /copy-workflow write                — 生成+优化（Stage 3）：3 轮 Writer-Reviewer 对抗
-C. /copy-workflow finalize             — 对比+终稿（Stage 4-6）：竞品对比 + 可选优化 + 翻译质检
+A. /copy-workflow research [产品名]    — 调研段：提炼卖点 + Deep Research + 飞书归档"调研报告"字段
+B. /copy-workflow write                — 生成+优化：3 轮 Writer-Reviewer + 竞品对标循环（最多 3 轮）
+C. /copy-workflow finalize             — 质检+发布：--qc-only 质检 + 飞书回填"文案"字段
 D. /copy-workflow all [产品名]         — 全流程串联（含三段间暂停确认）
+
+如需翻译 → 用户主动调 /translate <target-language> output/finalize/qc-checked.md（独立流程，不在工作流编排内）
 
 回复 A/B/C/D 或带参数直接跑。
 ```
@@ -115,9 +117,9 @@ copy-workflow/
 ├── SKILL.md                 ← 本文件（主编排）
 ├── README.md
 ├── references/
-│   ├── research.md          ← 调研段（Stage 1-4，含浏览器自动化）
+│   ├── research.md          ← 调研段（含浏览器自动化 + 调研报告飞书归档 fldeBNYVdg）
 │   ├── write.md             ← 生成+优化段（3 轮 Writer-Reviewer + Step 7.5 对标循环）
-│   ├── finalize.md          ← 终稿段（优化 + 本地化 + 飞书推送 + Step 5 自动清理）
+│   ├── finalize.md          ← 质检+发布段（v4 — --qc-only 质检 + 飞书回填"文案" fld6nFr6QN + Step 5 自动清理）
 │   └── all.md               ← 三段串联
 ├── step1-extract/ 等 6 个子 skill    ← 执行层
 ├── input/                   ← 只保留 *-template.* 模板

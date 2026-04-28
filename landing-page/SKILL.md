@@ -1,6 +1,6 @@
 ---
 name: landing-page
-description: 高转化落地页文案生成（内置 Writer-Reviewer 3 轮对抗循环）。基于 input/research-report.md 调研报告，自动生成完整 11 个 Section 落地页英文创作底稿（终稿目标市场/语言由后续 finalize 段强制询问确定，本段不判断），由独立 Reviewer Agent 审查 3 轮后输出到 output/optimized.md。Use when user mentions "落地页", "文案", "landing page", "copy", or after research report is ready.
+description: 高转化落地页文案生成（内置 Writer-Reviewer 3 轮对抗循环）。基于 input/research-report.md 调研报告（英文 FR/DE/IT 等市场视角），按 country 自动推断 target_language，**直接产出对应语言**的 11 Section 落地页文案（v5 — 多语言原创支持）。由独立 Reviewer Agent 审查 3 轮后输出到 output/optimized.md。Use when user mentions "落地页", "文案", "landing page", "copy", or after research report is ready.
 disable-model-invocation: false
 argument-hint: "[research-report-path]（默认 input/research-report.md）"
 ---
@@ -9,7 +9,45 @@ argument-hint: "[research-report-path]（默认 input/research-report.md）"
 
 ## 概述
 
-基于用户粘贴的 Gemini 调研报告（`input/research-report.md`），通过 **Writer-Reviewer 角色分离**的 3 轮质检循环，生成高转化落地页英文文案。
+基于用户粘贴的 Gemini 英文调研报告（`input/research-report.md`，针对目标市场调研但语言英文），通过 **Writer-Reviewer 角色分离**的 3 轮质检循环，**直接产出目标语言**的高转化落地页文案。
+
+## v5 多语言原创支持（2026-04-27 起）
+
+### 目标语言推断（启动时必做）
+
+1. 读 `output/_handoff.json` 的 `country` 字段（research 段已写入）
+2. 按下表推断 `target_language`：
+
+| country | target_language | 备注 |
+|---|---|---|
+| US / UK / GB / AU / CA / IE / NZ / ZA | English（按地区调整拼写：US 用 color、UK 用 colour 等）| 英语系 |
+| FR | French | |
+| DE | German | |
+| IT | Italian | |
+| ES | Spanish (Spain) | |
+| MX | Mexican Spanish | |
+| BR | Brazilian Portuguese | |
+| PT | Portuguese (Portugal) | |
+| NL | Dutch | |
+| JP | Japanese | |
+| KR | Korean | |
+| 未匹配 | 提示用户检查 country 字段后重跑 | |
+
+3. 把 `target_language` 注入 Writer + Reviewer 的 prompt 头部（要求"全文用 `<target_language>` 创作 / 审核"）
+4. 调研报告**保持英文**作为 Writer 输入（Writer 跨语言转换：读英文调研→写目标语言文案）
+
+### 字数约束的等价适配
+
+WRITER.md / REVIEWER.md 中所有"X 个单词"的字数约束都是**英文标准**。其他语言按"等价表达力"调整：
+
+| 语言族 | 等价系数（vs 英文）| 例：英文 5-10 词 |
+|---|---|---|
+| 英语系 / 拉丁语系（French / German / Italian / Spanish / Portuguese / Dutch）| 0.7 - 1.2× | 法 4-12 / 德 3-8（德文复合词长）/ 意 5-10 |
+| 日文 / 韩文 / 中文 | 字符数计 | 日文 10-25 字符 |
+
+字符约束（如 SEO `seo_title: 55-60 字符`）**不变**（直接按目标语言字符数）。
+
+Writer / Reviewer 输出时按目标语言的**自然表达力**调整字数，但**结构元素数量绝不可变**（如 Hero `selling_points` 永远 4 条、Reviews 永远 8 条）。
 
 ## 使用方式
 
