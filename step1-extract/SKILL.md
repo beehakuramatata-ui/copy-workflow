@@ -53,6 +53,7 @@ https://rcnzxk2pti9r.feishu.cn/wiki/CQGcwyF5oiNYipkLXpZcZkFLnjc?fromScene=spaceO
 
 ### 6. 按以下结构提炼保存到 `output/step1-extract.md`
 
+- **【市场】**：目标市场国家代码（如 US / GB / FR / DE / JP），值来自飞书"国家"字段或 `/copy-workflow research <产品>-<国家>` 的国家参数
 - **【产品名】**：产品的完整名称
 - **【关键词】**：核心搜索关键词和长尾关键词
 - **【使用方法】**：产品的使用步骤和方法
@@ -60,6 +61,8 @@ https://rcnzxk2pti9r.feishu.cn/wiki/CQGcwyF5oiNYipkLXpZcZkFLnjc?fromScene=spaceO
 - **【价格】**：产品价格信息
 - **【产品优势】**：相较于同类产品的优势
 - **【产品成分】**：核心成分及其功效
+
+**为什么把【市场】放第一**：市场决定整条链路的语境锚点 —— Gemini 调研按目标市场写痛点/文案/评价语境；Writer 按目标市场推断 target_language 直接产出对应语言文案；finalize --qc-only 按目标市场查监管/货币/人名本地化。市场缺失 → 整条链路退化为通用英文 → 落地页与目标市场脱节。
 
 ## 防错约束
 

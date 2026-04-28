@@ -55,11 +55,62 @@ URL: https://www.amazon.com/Palmers-Moisturizing-Instantly-Safflower-Phthalates/
 ```
 
 ## 输入格式：
+- **目标市场（Target Market）**：[由 Step 1 自动填入，如 US / GB / FR / DE / JP — 决定调研语境锚点]
 - 产品名称：[由 Step 1 自动填入]
 - 价格范围：[由 Step 1 自动填入]
 - 核心卖点：[由 Step 1 自动填入，基于功能和产品优势]
 - 核心成分：[由 Step 1 自动填入]
 - 其他信息：[由 Step 1 自动填入，包括使用方法、关键词等]
+
+## 市场本土化撰写方向（重要）
+
+**报告主体仍用英文撰写**（保持引用密度和高质量），但所有"用户视角"内容必须按**目标市场的本土文化语境和表达习惯**展开，不要默认套美国语境：
+
+- **维度 1 目标人群**：人口画像、生活方式、消费模式按目标市场国情（FR 法国家庭结构 ≠ US 单身白领；DE 德国监管谨慎 ≠ US 营销激进；JP 日本社交压力 ≠ US 个人主义）
+- **维度 2 痛点 + 生活困扰场景**：场景必须本土化（FR 巴黎地铁通勤 vs US 加州海滩；DE 柏林冬季干燥 vs JP 东京梅雨季湿热）
+- **维度 5 营销文案搜集**：搜目标市场本土品牌的真实文案（FR → 法国本土 D2C 品牌；DE → 德国药妆品牌；不要全部 Amazon US）
+- **维度 19 用户评价（20 条）**：用户姓名按目标市场习惯（FR → Camille T. / Antoine R.；DE → Lukas M. / Hannah B.；JP → 健太 / 美咲）；评价语气和关注点按当地文化（DE 用户重数据、FR 重感官、JP 重细节）
+- **维度 26 品牌介绍**：合规/认证/监管按目标市场（FR/EU → ANSM/CE；DE → BfArM；JP → PMDA；UK → MHRA；不要写 FDA）
+- **价格/货币**：用目标市场货币（EU → €；UK → £；JP → ¥；AU → A$）
+- **度量衡**：按当地标准（公制/英制）
+
+**Why**：调研报告是 Writer 的语料源。Writer 按 country 推断 `target_language`（FR → 法语 / DE → 德语 / JP → 日语）后**直接**产出该语言文案。如果调研报告是美国语境，Writer 翻译时会丢失本土感；如果调研报告本身就是目标市场语境，Writer 转写到目标语言时几乎是"直译保意"，转化率显著高。
+
+## 复合市场代码（v5.4 关键避坑）
+
+飞书"国家"字段使用**复合代码**精确指定市场+语言双维度：`CHde` / `CHfr` / `BEnl` / `BEfr` / `USes` / `CAfr` / `LUfr` / `LUde`。这些**不能**当作单一国家代码处理。
+
+| 复合代码 | 必须按这个市场写 | 严禁混淆 | 关键差异 |
+|---|---|---|---|
+| **CHde** | 瑞士德语区（Zürich/Bern/Basel） | ❌ 不是德国 | 货币 CHF 不是 EUR；监管 Swissmedic 不是 BfArM；用 Swiss High German（保留 ß，但偏书面）；用户偏好高品质 + 注重隐私 + 价格不敏感 |
+| **CHfr** | 瑞士法语区（Geneva/Lausanne） | ❌ 不是法国 | 货币 CHF；Swiss French 用 septante / nonante 不用 soixante-dix / quatre-vingt-dix |
+| **BEnl** | 比利时弗拉芒区（Antwerp/Ghent） | ❌ 不是荷兰 | Flemish Dutch 与 Netherlands Dutch 词汇有差异（如 "你"用 ge / je 而不是 jij）；监管 FAMHP 不是 CBG-MEB |
+| **BEfr** | 比利时瓦隆区（Brussels/Liège/Namur） | ❌ 不是法国 | Belgian French 用 septante / nonante；监管 FAMHP；文化偏务实 |
+| **USes** | 美国 Hispanic 市场（Miami/LA/NY） | ❌ 不是西班牙 | 货币 USD 不是 EUR；监管 FDA；用 US Spanish（含 Spanglish 词如 "rentar" / "parquear"）；目标用户：拉美裔美国家庭 |
+| **CAfr** | 加拿大魁北克（Montréal/Québec City） | ❌ 不是法国 | Quebec French 用 "magasiner" 不是 "faire les courses"；监管 Santé Canada；货币 CAD；强 Quebec identity |
+| **LUfr / LUde** | 卢森堡 | ❌ 不是法国 / 德国 | 卢森堡监管 Ministère de la Santé；高收入小国 |
+| **AT** | 奥地利（Vienna/Salzburg） | ❌ 不是德国 | 用 Austrian German（"Jänner" 不是 "Januar"；"Erdäpfel" 不是 "Kartoffeln"）；监管 BASG |
+| **CAen** | 加拿大英语区 | ❌ 不是美国 | 货币 CAD；拼写偏英式（colour / centre）；监管 Health Canada；提及温哥华/多伦多而非洛杉矶/纽约 |
+| **DK** | 丹麦 | （单一） | 货币 DKK 不是 EUR；监管 DKMA；Hygge 文化贯穿；用户重设计感 |
+
+**对调研报告的具体影响**（每个 26 维度都要按上面表格的"必须"列展开）：
+
+- **维度 1 目标人群**：CHde 的人口画像 = 瑞士德语区中产家庭（不是德国柏林单身白领）
+- **维度 2 痛点 + 生活困扰场景**：USes 用 "通勤路上 1.5 小时被英语广播包围，回家只想说西语"（不是西班牙的"巴塞罗那海滩"）
+- **维度 5 营销文案搜集**：BEnl 搜 Flemish 本土品牌（如 Galderma BE / Pharma.be）的真实文案，**不是** Amazon NL 的荷兰品牌
+- **维度 19 用户评价**：CHfr 用 Swiss French 拼写（septante）+ 瑞士姓名（Favre / Rochat 不是 Dupont / Martin）+ 货币 CHF
+- **维度 26 品牌介绍**：AT 引用 BASG 不是 BfArM；CHde 引用 Swissmedic 不是 BfArM；BEnl 引用 FAMHP 不是 CBG-MEB
+
+**致命错误示例**（这些会让 Writer 产出"看似本土实则错位"的文案）：
+
+```
+❌ CHde 文案出现 "FDA-approved"  → 应是 "Swissmedic-genehmigt"
+❌ CHde 文案出现 "€29.99"        → 应是 "CHF 29.95"
+❌ CHde 文案的 Reviews 出现 "Müller, Berlin" → 应是 "Steiner, Zürich"
+❌ USes 文案的 Reviews 出现 "Carmen García, Madrid" → 应是 "Maria G., Miami"
+❌ CAfr 文案出现 "soixante-dix euros"  → 应是 "septante dollars" (CAD)
+❌ BEnl 文案出现 "CBG-MEB goedgekeurd" → 应是 "FAMHP-goedgekeurd"
+```
 
 ## 必须调研的维度：
 

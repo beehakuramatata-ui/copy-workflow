@@ -8,6 +8,72 @@
 
 ---
 
+## 🌐 目标语言审检（v5 多语言原创支持）
+
+**调用方应在 prompt 头部注入 `target_language` 变量**（landing-page/SKILL.md 启动时按 country 推断并传入）。
+
+### 审检语言规则
+
+- 待审稿件 `output/draft-rN.md` 是 `<target_language>` 写的（不是英文）
+- 你的**审稿报告（修改指令）用中文输出**（系统语言保持中文）
+- 引用稿件中的具体片段时，用 `<target_language>` 原文 + 中文说明（如「`Le meilleur produit pour la peau` ← 此句太泛，建议增加具体功效词」）
+
+### 字数检查的等价适配
+
+下方所有 Section 元素的"X 个单词"是**英文标准**。审检 `<target_language>` 稿件时按等价系数判定：
+
+| 语言族 | 等价系数 | 例：英文 5-10 词 → 检查阈值 |
+|---|---|---|
+| 法/西/意/葡/荷 | 0.9 - 1.2× | 法 5-12 / 西 5-12 |
+| 德文（复合词长） | 0.6 - 0.9× | 德 3-8 |
+| 日文 / 韩文 / 中文 | **按字符数计** | 日文 10-25 字符 |
+| 英语系 | 1.0×（不变）| 5-10 |
+
+字符约束（如 SEO `seo_title: 55-60 字符`）→ 按目标语言**字符数**直接生效。
+
+**结构元素数量**（Hero `selling_points` 4 条、Reviews 8 条、BA 10 条）→ 严格不变，少 1 条 = 0 分。
+
+### 反模板化检查的语言适配
+
+G 维度（反模板化）原本针对英文套路句式（如 "America's #1"）。在目标语言下：
+
+- 不再机械套英文反模板词表
+- 改为检查目标语言下的**当地套路句式**（如法语营销文案常见的 "Le N°1 en France" / 德语 "Marktführer in Deutschland"）
+- 如不熟悉目标语言营销套路，**只查 Reviews 标题是否基于内容、Compare 标题是否避固定句式**这两条核心反套路项
+
+### 人名规则审检
+
+- Reviews `buyer_name`：必须是**目标 market 本土姓名 + `名 + 空格 + 姓首字母 + 点` 格式**（参见 WRITER.md L34 的 22 国本土姓名风格表）
+- 看到非目标 market 人名残留 → **0 分零容忍**
+- Reviews buyer_name **缺姓首字母**（如仅 `Sara`）或**带完整姓氏**（如 `Sara Thompson`）→ **0 分零容忍**（v5.2 强化）
+- BA `comment_X_name`：**名 + 英文半角逗号 + 年龄**（如 `Catherine, 76`）规则不变
+- 正文内禁止任何人名规则不变
+
+**v5.4 复合 market 强化校验**（关键易错项）：
+- CHde 稿件出现德国姓（Müller / Schneider 等柏林典型）→ 0 分（应是瑞士姓 Steiner / Schmid / Keller）
+- CHfr 稿件出现法国姓（Dupont / Martin 巴黎典型）→ 0 分（应是瑞士法语区姓如 Favre / Rochat）
+- BEnl 稿件出现荷兰典型姓（van der Berg / de Vries）→ 0 分（应是弗拉芒姓 De Smet / Janssens）
+- BEfr 稿件出现法国典型姓 → 0 分（应是比利时法语姓 Leclercq / Dubois）
+- USes 稿件出现西班牙完整姓全名 → 0 分（应是 `名 + 姓首字母` 简化）
+- CAfr 稿件出现法国典型姓 → 0 分（应是魁北克姓如 Tremblay / Gagnon / Lavoie）
+- AT 稿件出现德国典型姓 → 0 分（应是奥地利姓如 Huber / Gruber）
+
+**复合 market 货币 / 监管校验**（A-H 维度补强）：
+- CHde / CHfr → 货币应是 **CHF**，监管应是 **Swissmedic**（不是 EUR / BfArM / ANSM）
+- BEnl / BEfr / LUfr / LUde → 货币 EUR，监管 **FAMHP**（BE） / **Ministère de la Santé**（LU）
+- USes → 货币 **USD**，监管 **FDA**（即使语言是西语，市场仍是美国）
+- CAen / CAfr → 货币 **CAD**，监管 **Health Canada**（CAfr 用法语写但仍是加拿大监管）
+- AT → 货币 EUR，监管 **BASG**（不是 BfArM）
+- DK → 货币 **DKK**，监管 **DKMA**
+
+### 监管 / 货币 / 度量审检
+
+- 调研报告里的 FDA/FTC 等美国机构 → 必须替换为目标市场对应机构（FR → ANSM / DE → BfArM / IT → AIFA / JP → PMDA）
+- 货币 / 度量按目标市场（EU → € / 公制；UK → £ / 英制；JP → ¥ / 公制）
+- 看到 FDA / `$` / `lbs` 残留在非美国稿件 → 报问题
+
+---
+
 ## 审稿流程
 
 每轮审稿输出以下三个板块：
@@ -84,7 +150,7 @@
 - testimonial_title: 6-10个单词
 - 恰好8条评论（无review_9/10）
 - 长度分布: 3条长(80-120词) + 3条中(40-60词) + 2条短(15-30词)
-- buyer_name: 仅名字，不含姓氏
+- buyer_name: `名 + 空格 + 姓首字母 + 点` 格式（如 `Sara T.`）；不加年龄；CJK 例外按当地姓名习惯
 - review_title: 基于评价内容的功效表达
 - review_content: 禁止加任何引号，正文内禁止出现任何人名
 - 无user_sharing_section_title、rating_authority字段
@@ -108,7 +174,7 @@
 #### Before_After_Section
 - before_after_title: ≤12个单词
 - 10条评论
-- comment_name: "名字, 年龄"格式（仅名字，不含姓氏）
+- comment_name: "名字, 年龄"格式（仅名字，不含姓氏；逗号必须是英文半角逗号 `,`，禁止中文全角逗号 `，`）
 - selling_point_1/2: 2-3个单词，全大写，从评论内容提取
 - comment_title: 5-10个单词，禁止加任何引号，纯文本
 - comment_detail: 禁止加任何引号，正文内禁止出现任何人名
