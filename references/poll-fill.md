@@ -267,7 +267,7 @@ results.push({
    - <product>-<country>: <reason>
    - ...
 ⏱  总耗时：<分钟数>
-📅 下次自动扫描：30 分钟后
+📅 下次自动扫描：2 小时后
 ─────────────────────────────
 ```
 
@@ -298,7 +298,7 @@ results.push({
 ```
 mcp__scheduled-tasks__create_scheduled_task({
   taskId: "copy-workflow-poll-fill",
-  cronExpression: "*/30 * * * *",   // 每 30 分钟（用户本地时间）
+  cronExpression: "17 */2 * * *",   // 每 2 小时第 17 分（避开整点拥堵，与文件顶部一致）
   description: "扫描飞书产品总表，自动补跑'调研已填+文案空'的产品",
   prompt: "Skill copy-workflow，按 references/poll-fill.md 执行扫描+批量补跑。"
 })
