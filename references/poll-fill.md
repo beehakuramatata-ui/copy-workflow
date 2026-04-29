@@ -25,8 +25,8 @@
 INPUTS:    无（直接查飞书表）
 OUTPUTS:   每个匹配产品的完整 finalize 段产物（飞书"文案"字段回填）
            本地 input/output 在每个产品 finalize Step 5 后自动清理
-SCAN:      飞书多维表 D6Ambq061aPf3Dsj1AbcT2zQnVh / tblVAw8vt81bsk5H
-FILTER:    "调研报告" (fldeBNYVdg) 非空 AND "文案" (fld6nFr6QN) 为空
+SCAN:      飞书多维表 FLklbT5KPaa5e1swuwAc6ifGnXg / tblDHUN1vEbPqaoT
+FILTER:    "调研报告" (fldFy3UkGV) 非空 AND "文案" (fldYRXEIrS) 为空
 ORDER:     串行（按 record_list 顺序，前一个完全跑完再下一个）
 HANDOFF:   不写跨段 _handoff.json（每个产品独立闭环）
 ```
@@ -69,9 +69,9 @@ trap 'rm -f "$LOCK_FILE"' EXIT
 
 ```bash
 lark-cli base +record-list \
-  --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
-  --table-id tblVAw8vt81bsk5H \
-  --view-id vewzqUHGIs \
+  --base-token FLklbT5KPaa5e1swuwAc6ifGnXg \
+  --table-id tblDHUN1vEbPqaoT \
+  --view-id vewK3tr5O0 \
   --limit 500 > output/_scan_records.json
 ```
 
@@ -104,8 +104,7 @@ for (let i = 0; i < rows.length; i++) {
   if (hasContent(research) && isEmpty(copy)) {
     const country = rows[i][idxCountry];
     const countryStr = Array.isArray(country) ? country[0] : country;
-    const brandLink = rows[i][idxBrand];
-    const brandRecId = Array.isArray(brandLink) && brandLink[0] ? brandLink[0].id : null;
+    const brand = rows[i][idxBrand];   // text，直接是品牌名
 
     // 提取 research docx URL（字段类型是 text，URL 嵌在 markdown 链接里）
     let researchUrl = null;
@@ -117,7 +116,7 @@ for (let i = 0; i < rows.length; i++) {
       record_id: recIds[i],
       product: rows[i][idxProd],
       country: countryStr,
-      brand_rec_id: brandRecId,
+      brand: brand,
       research_url: researchUrl
     });
   }
@@ -174,16 +173,9 @@ lark-cli docs +get \
 
 校验失败 → 记 `failed: "research_download_failed"`，跳过本产品。
 
-#### 3.3 通过品牌总表查品牌名（参考 research.md 1.2a）
+#### 3.3 品牌名直接读（v6 简化）
 
-```bash
-lark-cli base +record-get \
-  --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
-  --table-id tbly0CJtWcQKl55t \
-  --record-id <brand_rec_id>
-```
-
-读返回的 `data.record.品牌` 字段（formula 文本）。
+新表"品牌"字段是 text，Step 2 过滤脚本已把品牌名文本写入 `match.brand`，直接用即可，无需跳品牌总表。
 
 #### 3.4 模拟 step1-extract 产物（极简版）
 

@@ -138,9 +138,9 @@ copy-workflow/
 ├── SKILL.md                 ← 本文件（主编排）
 ├── README.md
 ├── references/
-│   ├── research.md          ← 调研段（含浏览器自动化 + 调研报告飞书归档 fldeBNYVdg）
+│   ├── research.md          ← 调研段（含浏览器自动化 + 调研报告飞书归档 fldFy3UkGV）
 │   ├── write.md             ← 生成+优化段（3 轮 Writer-Reviewer + Step 7.5 对标循环）
-│   ├── finalize.md          ← 质检+发布段（v4 — --qc-only 质检 + 飞书回填"文案" fld6nFr6QN + Step 5 自动清理）
+│   ├── finalize.md          ← 质检+发布段（v4 — --qc-only 质检 + 飞书回填"文案" fldYRXEIrS + Step 5 自动清理）
 │   └── all.md               ← 三段串联
 ├── step1-extract/ 等 6 个子 skill    ← 执行层
 ├── input/                   ← 只保留 *-template.* 模板

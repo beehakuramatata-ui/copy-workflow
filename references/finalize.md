@@ -23,9 +23,8 @@
 > - 删除 v3 的"按建议优化"冗余（write 段 Step 7.5 循环已跑过最多 3 轮 copy-optimize，再跑一次方向不清）
 > - 删除"按国家自动本地化/翻译"主体（翻译变成独立按需任务，由用户主动发起）
 > - 保留"质检"作为终稿前最后一道关卡（调 translate skill 的 `--qc-only` 模式，跑全套 A-H 质检）
-> - 飞书回填**只 1 个字段**："文案" `fld6nFr6QN` ← qc-checked.md docx URL
-> - 调研报告字段 `fldeBNYVdg` 由 research 段已写过，本段不碰
-> - 底稿字段 `fldAfkaVxa` 不再使用
+> - 飞书回填**只 1 个字段**："文案" `fldYRXEIrS` ← qc-checked.md docx URL
+> - 调研报告字段 `fldFy3UkGV` 由 research 段已写过，本段不碰
 
 ## 本段契约
 
@@ -156,22 +155,22 @@ https://rcnzxk2pti9r.feishu.cn/docx/<obj_token>
 
 | 字段中文名 | field_id | 类型 | 放什么 |
 |---|---|---|---|
-| 文案 | **`fld6nFr6QN`** | text | qc-checked.md docx URL |
+| 文案 | **`fldYRXEIrS`** | text | qc-checked.md docx URL |
 
 ```bash
 lark-cli base +record-upsert \
-  --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
-  --table-id tblVAw8vt81bsk5H \
+  --base-token FLklbT5KPaa5e1swuwAc6ifGnXg \
+  --table-id tblDHUN1vEbPqaoT \
   --record-id <record_id> \
-  --json '{"fld6nFr6QN":"<qc_url>"}'
+  --json '{"fldYRXEIrS":"<qc_url>"}'
 ```
 
 #### 3.4 校验
 
 ```bash
 lark-cli base +record-get \
-  --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
-  --table-id tblVAw8vt81bsk5H \
+  --base-token FLklbT5KPaa5e1swuwAc6ifGnXg \
+  --table-id tblDHUN1vEbPqaoT \
   --record-id <record_id>
 ```
 
@@ -305,8 +304,8 @@ cd ..
 🛠 优化路径：<A 默认（无 optimize 冗余）/ C 用户 instruction>
 ✓ 质检：修改 N 项（命中维度：D/F/H）
 📋 飞书回填：
-   - 文案 (fld6nFr6QN)：<✅ 成功 / ⚠️ 失败原因 / - 跳过>
-   - 调研报告 (fldeBNYVdg)：<✅ research 段已填 / ⚠️ 失败原因 / - 跳过>
+   - 文案 (fldYRXEIrS)：<✅ 成功 / ⚠️ 失败原因 / - 跳过>
+   - 调研报告 (fldFy3UkGV)：<✅ research 段已填 / ⚠️ 失败原因 / - 跳过>
 📄 文案终稿 docx：<URL 或 "—">
 📄 调研报告 docx：<URL 或 "—">
 🧹 本地清理：<✅ 已清 input/output / ⚠️ 跳过（飞书未全部留档，本地 output/finalize/ 仍保留）>

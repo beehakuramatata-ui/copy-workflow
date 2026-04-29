@@ -22,8 +22,8 @@
 ```
 INPUTS:    无（直接查飞书表）
 OUTPUTS:   每个匹配产品的完整 research 段产物（飞书"调研报告"字段回填）
-SCAN:      飞书多维表 D6Ambq061aPf3Dsj1AbcT2zQnVh / tblVAw8vt81bsk5H
-FILTER:    "国家" 非空 AND "竞品链接" 非空 AND "产品(英)" 非空 AND "品牌" 非空 AND "调研报告" (fldeBNYVdg) 为空
+SCAN:      飞书多维表 FLklbT5KPaa5e1swuwAc6ifGnXg / tblDHUN1vEbPqaoT，视图 vewK3tr5O0（strapi文案待生成）
+FILTER:    视图天然筛"待生成"行 + 代码侧 hard check：基础信息齐（国家/竞品链接/产品(英)/品牌 全非空）AND "调研报告" (fldFy3UkGV) 为空
 ORDER:     严格串行（research 段占用 Gemini 网页 + Playwright，并发会撞车）
 HANDOFF:   不写跨段 _handoff.json（每个产品独立闭环）
 ```
@@ -78,9 +78,9 @@ trap 'rm -f "$LOCK_FILE"' EXIT
 
 ```bash
 lark-cli base +record-list \
-  --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
-  --table-id tblVAw8vt81bsk5H \
-  --view-id vewzqUHGIs \
+  --base-token FLklbT5KPaa5e1swuwAc6ifGnXg \
+  --table-id tblDHUN1vEbPqaoT \
+  --view-id vewK3tr5O0 \
   --limit 500 > output/_scan_research.json
 ```
 
@@ -120,13 +120,12 @@ for (let i = 0; i < rows.length; i++) {
       && hasContent(comp)
       && hasContent(brand)) {
     const countryStr = Array.isArray(country) ? country[0] : country;
-    const brandRecId = Array.isArray(brand) && brand[0] ? brand[0].id : null;
 
     matches.push({
       record_id: recIds[i],
       product:   product,
       country:   countryStr,
-      brand_rec_id: brandRecId
+      brand:     brand   // text 字段，直接是品牌名文本
       // 竞品 URL 由 research 段子 Agent A 自己解析（参考 research.md Step 1.5）
     });
   }
@@ -194,7 +193,7 @@ rm -rf output/finalize/* output/research/* output/write/*
 - product: <product>
 - country: <country>
 - record_id: <record_id>
-- brand_rec_id: <brand_rec_id>
+- brand: <brand>   # 文本品牌名，直接来自飞书"品牌"字段
 ```
 
 #### 3.7 等子 Agent C 完成 + 校验飞书已回填
@@ -204,8 +203,8 @@ rm -rf output/finalize/* output/research/* output/write/*
 ```bash
 # 校验飞书"调研报告"字段已含 URL
 lark-cli base +record-get \
-  --base-token D6Ambq061aPf3Dsj1AbcT2zQnVh \
-  --table-id tblVAw8vt81bsk5H \
+  --base-token FLklbT5KPaa5e1swuwAc6ifGnXg \
+  --table-id tblDHUN1vEbPqaoT \
   --record-id <record_id>
 ```
 

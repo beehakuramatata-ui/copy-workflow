@@ -429,7 +429,7 @@ for N in 1..3:
 
 1. **finalize Step 1 — 固化终稿底稿**：`cp output/optimized.md output/final.md`
 2. **finalize Step 2 — 调 translate skill `--qc-only` 模式跑 A-H 质检**：产出 `output/qc-checked.md` + `output/qc-modifications.md`
-3. **finalize Step 3 — 飞书云文档推送 + "文案"字段回填**：上传 qc-checked.md 为飞书 docx → 回填多维表 `fld6nFr6QN` 字段（值是飞书云文档 URL）
+3. **finalize Step 3 — 飞书云文档推送 + "文案"字段回填**：上传 qc-checked.md 为飞书 docx → 回填多维表 `fldYRXEIrS` 字段（值是飞书云文档 URL）
 4. **finalize Step 4 — 产物副本 + _handoff.json 更新**：copy 到 `output/finalize/`，写 `_handoff.json` 字段（`feishu_publish` / `feishu_docx_urls.qc` / `qc_modifications_count` 等）
 5. **finalize Step 5 — 落地后自动清理**：满足前置条件（feishu_publish=ok + feishu_docx_urls.qc 非空 + `_handoff_feishu_research.json` 里 `feishu_research_publish == "ok"`） → 清理本地 input/ output/
 
